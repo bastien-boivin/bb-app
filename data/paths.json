@@ -1,0 +1,6 @@
+{
+    "data_directory": "data/",
+    "logs_directory": "logs/",
+    "assets_directory": "assets/",
+    "data_lake_path": "C:/Users/basti/Documents/Output_HydroModPy/LakeRes/Reservoir/Donnees journalieres EBR/dam_input_2004_2024.csv"
+}

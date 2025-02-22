@@ -1,0 +1,6 @@
+{
+    "data_directory": "data/",
+    "logs_directory": "logs/",
+    "assets_directory": "assets/",
+    "custom_path": ""
+}
