@@ -10,26 +10,26 @@ sys.path.append(root_dir)
 cwd = os.getcwd()
 if cwd != root_dir:
     os.chdir(root_dir)
-
-#% Modules
+# -----------------------------------------------------
+# Modules
+# -----------------------------------------------------
 import src
 import importlib
 importlib.reload(src)
-from src.toolbox import LogManager
 
-log_manager = LogManager(mode="dev", # Utiliser mode="verbose" pour afficher les logs INFO et supérieur et mode="quiet" pour afficher les logs WARNING et supérieur
-                         # log_dir="", # Utiliser log_dir pour spécifier le répertoire des logs
-                         # overwrite=False # Utiliser overwrite=True pour écraser les fichiers de logs existants
-                         # verbose_libraries=True # Utiliser verbose_libraries=True pour afficher les logs des bibliothèques (waring et supérieur)
-                         )
+from src.config import initialize_sidebar
 
-st.set_page_config(
-    page_title="Accueil",
-    page_icon="🏠",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+# -----------------------------------------------------
+# Configuration de la page Streamlit
+# -----------------------------------------------------
+st.set_page_config(page_title="Accueil", page_icon="🏠", layout="wide", initial_sidebar_state="expanded")
 
-st.sidebar.title("Navigation")
+# -----------------------------------------------------
+# Sidebar
+# -----------------------------------------------------
+initialize_sidebar()
+
+# -----------------------------------------------------
+# Page content
+# -----------------------------------------------------
 st.title("Accueil")
-st.write("Contenu de la page d'accueil")

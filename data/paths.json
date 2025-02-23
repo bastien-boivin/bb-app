@@ -1,6 +1,23 @@
 {
-    "data_directory": "data/",
-    "logs_directory": "logs/",
-    "assets_directory": "assets/",
-    "data_lake_path": "C:/Users/basti/Documents/Output_HydroModPy/LakeRes/Reservoir/Donnees journalieres EBR/dam_input_2004_2024.csv"
+    "profiles": {
+        "cheze": {
+            "data_lake_path": "test_cheze",
+            "folder_simu_path": "test_cheze",
+            "folder_output_path": "aaaaa",
+            "data_directory": "zzzzz"
+        },
+        "canut": {
+            "data_lake_path": "test_canut",
+            "folder_simu_path": "test_canut",
+            "folder_output_path": "test_canut",
+            "data_directory": "bbbbb"
+        }
+    },
+    "default_paths": {
+        "data_lake_path": "",
+        "folder_simu_path": "",
+        "folder_output_path": "",
+        "data_directory": ""
+    },
+    "selected_profile": "cheze"
 }
