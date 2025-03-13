@@ -2,6 +2,7 @@
 import os
 import sys
 import logging
+import numpy as np
 import pandas as pd
 import plotly.io as pio
 import plotly.offline as pyo
@@ -36,25 +37,8 @@ class TimeSeriesPlot_Plotly:
       - Add vertical/horizontal lines and rectangular zones.
       - Configure the plot's title, axis titles, axis ranges, and log scaling.
       - Display the plot in a browser or inline.
-
-    Parameters
-    ----------
-    title : str
-        Title of the plot.
-    x_axis_title : str
-        Title for the X-axis.
-    y_axis_title : str
-        Title for the Y-axis.
-    x_range : tuple
-        Tuple specifying the start and end year for the X-axis range (e.g., (2000, 2020)).
-    log_x : bool
-        Whether to use a logarithmic scale for the X-axis.
-    log_y : bool
-        Whether to use a logarithmic scale for the Y-axis.
-    mode : str
-        'default' for a standard chronological time series plot,
-        'evolution' to plot multi-year curves on a single year axis (e.g., annual cycle),
-        or 'statistics' to display statistical ribbons (min/max/quantiles) plus one focus year.
+      - Specify a custom annual cycle starting month.
+      - Apply cumulative calculations for evolution and statistics modes.
     """
 
     def __init__(self,
@@ -67,10 +51,11 @@ class TimeSeriesPlot_Plotly:
                  mode: str = 'chronique',
                  focus_year: int = None,
                  start_month: int = None,
+                 cumul: bool = False,
                  ):
         """
         Initialize the TimeSeriesPlot_Plotly class.
-
+        
         Parameters
         ----------
         title : str
@@ -81,18 +66,28 @@ class TimeSeriesPlot_Plotly:
             Title for the Y-axis.
         x_range : tuple
             Tuple specifying the start and end year for the X-axis range (e.g., (2000, 2020)).
-        log_x : bool
-            Whether to use a logarithmic scale for the X-axis.
-        log_y : bool
-            Whether to use a logarithmic scale for the Y-axis.
-        mode : str
-            'default' for a standard chronological time series plot,
-            'evolution' to plot multi-year curves on a single year axis (e.g., annual cycle),
-            or 'statistics' to display statistical ribbons (min/max/quantiles) plus one focus year.
-        focus_year : int
-            The focus year for the 'statistics' mode.
+        log_x : bool, optional
+            Whether to use a logarithmic scale for the X-axis. Default is False.
+        log_y : bool, optional
+            Whether to use a logarithmic scale for the Y-axis. Default is False.
+        mode : str, optional
+            Plot mode selection:
+            - 'chronique' for a standard chronological time series plot,
+            - 'evolution' to plot multi-year curves on a single year axis (e.g., annual cycle),
+            - 'statistic' to display statistical ribbons (min/max/quantiles) plus one focus year.
+            Default is 'chronique'.
+        focus_year : int, optional
+            The focus year for the 'statistic' mode. Required if mode is 'statistic'.
+        start_month : int, optional
+            Specify a custom month (1-12) to start the annual cycle. If > 1, the annual
+            cycle will begin on the 1st day of this month and end on the last day of the
+            month before. Default is None (calendar year).
+        cumul : bool, optional
+            If True, calculate cumulative values for evolution and statistic modes.
+            Not applicable in 'chronique' mode. Default is False.
         """
-        self.title = title
+        
+        self.title = title if title else f"Time Series Plot"
         self.x_axis_title = x_axis_title
         self.y_axis_title = y_axis_title
         self.x_range = x_range
@@ -101,6 +96,11 @@ class TimeSeriesPlot_Plotly:
         self.mode = mode
         self.focus_year = focus_year
         self.start_month = start_month if start_month is not None and start_month > 1 else None
+        self.cumul = cumul
+        
+        if self.cumul and self.mode == 'chronique':
+            logging.warning("Cumulative option is not applicable in 'chronique' mode. It will be ignored.")
+            self.cumul = False      
 
         if self.mode == 'statistic' and self.focus_year is None:
             logging.warning("The 'statistic' mode requires a reference year (focus_year). The 'chroniques' mode will be used instead.")
@@ -123,6 +123,10 @@ class TimeSeriesPlot_Plotly:
         """
         Add a time series to the plot.
 
+        This method prepares the time series data for visualization according to the 
+        specified mode and parameters. It can filter by year range, resample to different
+        frequencies, apply rolling window averages, and calculate cumulative values.
+
         Parameters
         ----------
         df : pd.DataFrame
@@ -131,18 +135,23 @@ class TimeSeriesPlot_Plotly:
             Name of the column containing the time data.
         var_col : str or int
             Name or index of the column containing the variable data.
-        legend_name : str
-            Name to display in the legend for this series.
-        year_min : int
+        legend_name : str, optional
+            Name to display in the legend for this series. If None, uses var_col.
+        year_min : int, optional
             Minimum year to include in the data.
-        year_max : int
+        year_max : int, optional
             Maximum year to include in the data.
-        freq : str
-            Resampling frequency ('D' for daily, 'W' for weekly, 'ME' for monthly).
-        rolling_window : int
-            Rolling window size for averaging.
+        freq : str, optional
+            Resampling frequency:
+            - 'D' for daily (default if None)
+            - 'W' for weekly
+            - 'ME' for monthly at month end
+        rolling_window : int, optional
+            Rolling window size for averaging (number of years to include in each window).
+            Not applicable in 'statistic' mode.
         """
         self.freq = freq
+        self.legend_name = legend_name
 
         df[time_col] = pd.to_datetime(df[time_col])
 
@@ -193,16 +202,17 @@ class TimeSeriesPlot_Plotly:
         df_analysis['year'] = df_analysis[time_col].dt.year
         df_analysis['doy'] = df_analysis[time_col].dt.dayofyear
 
+        # Handle leap years by adjusting day of year and removing Feb 29
         mask = (df_analysis[time_col].dt.is_leap_year) & (df_analysis[time_col].dt.dayofyear > 59)
         df_analysis.loc[mask, 'doy'] = df_analysis.loc[mask, 'doy'] - 1
         df_analysis = df_analysis[~((df_analysis[time_col].dt.month == 2) & (df_analysis[time_col].dt.day == 29))]
 
         df_analysis['week_num'] = ((df_analysis['doy'] - 1) // 7) + 1
-
         df_analysis.loc[df_analysis['week_num'] > 52, 'week_num'] = 52
 
-        df_analysis['month_num']= df_analysis[time_col].dt.month
+        df_analysis['month_num'] = df_analysis[time_col].dt.month
         
+        # Handle custom start month for annual cycle if specified
         if self.start_month is not None:    
             days_per_month = {
                 1: 31, 2: 28, 3: 31, 4: 30,
@@ -241,7 +251,7 @@ class TimeSeriesPlot_Plotly:
                 df_analysis
                 .groupby(['year', 'week_num'], as_index=False)
                 .agg({
-                    'time': 'first',
+                    time_col: 'first',
                     'doy': 'first',
                     'month_num': 'first',
                     var_col: 'mean'
@@ -252,17 +262,31 @@ class TimeSeriesPlot_Plotly:
                 df_analysis
                 .groupby(['year', 'month_num'], as_index=False)
                 .agg({
-                    'time': 'first',
+                    time_col: 'first',
                     'doy': 'first',
                     'week_num': 'first',
                     var_col: 'mean'
                     })
             )
         else:
-            df= df_analysis
+            df = df_analysis
 
         if self.start_month is not None:
             df['month_real'] = df[time_col].dt.month
+            
+        # Apply cumulative calculation if enabled
+        if self.cumul:
+            if self.mode in ['evolution', 'statistic']:
+                for year in df['year'].unique():
+                    year_mask = df['year'] == year
+                    if self.freq == 'W':
+                        sort_col = 'week_num'
+                    elif self.freq == 'ME':
+                        sort_col = 'month_num'
+                    else:
+                        sort_col = 'doy'
+                        
+                    df.loc[year_mask, var_col] = df.loc[year_mask].sort_values(by=sort_col)[var_col].cumsum()
         
         if rolling_window is not None:
             unique_years = sorted(df['year'].unique())
@@ -280,34 +304,34 @@ class TimeSeriesPlot_Plotly:
                 if self.freq == 'D':
                     avg_values = block_df.groupby('doy').agg({
                         y_data_name: 'mean',
-                        'time': 'first'
+                        time_col: 'first'
                     })
                     result_df = pd.DataFrame({
                         'year': start_year,
                         'doy': avg_values.index,
-                        'time': avg_values['time'],
+                        time_col: avg_values[time_col],
                         y_data_name: avg_values[y_data_name]
                     })
                 elif self.freq == 'W':
                     avg_values = block_df.groupby('week_num').agg({
                         y_data_name: 'mean',
-                        'time': 'first'
+                        time_col: 'first'
                     })
                     result_df = pd.DataFrame({
                         'year': start_year,
                         'week_num': avg_values.index,
-                        'time': avg_values['time'],
+                        time_col: avg_values[time_col],
                         y_data_name: avg_values[y_data_name]
                     })
                 elif self.freq == 'ME':
                     avg_values = block_df.groupby('month_num').agg({
                         y_data_name: 'mean',
-                        'time': 'first'
+                        time_col: 'first'
                     })
                     result_df = pd.DataFrame({
                         'year': start_year,
                         'month_num': avg_values.index,
-                        'time': avg_values['time'],
+                        time_col: avg_values[time_col],
                         y_data_name: avg_values[y_data_name]
                     })
 
@@ -315,6 +339,7 @@ class TimeSeriesPlot_Plotly:
 
             df = pd.concat(output_dfs, ignore_index=True)
 
+        # Process data for chronique mode
         if self.mode == 'chronique':
             final_df = df.copy()
             final_df.rename(columns={time_col: 'time'}, inplace=True)
@@ -328,7 +353,8 @@ class TimeSeriesPlot_Plotly:
                 'rolling_window': rolling_window
             })
 
-        if self.mode == 'evolution':
+        # Process data for evolution mode
+        elif self.mode == 'evolution':
             if self.freq == 'W':
                 grouped = df.groupby(['year', 'week_num'])[y_data_name].mean().reset_index()
                 x_col = 'week_num'
@@ -357,7 +383,8 @@ class TimeSeriesPlot_Plotly:
                     'is_evolution': True
                 })
 
-        if self.mode == 'statistic':
+        # Process data for statistic mode
+        elif self.mode == 'statistic':
             if self.freq == 'W':
                 x_col = 'week_num'
             elif self.freq == 'ME':
@@ -365,14 +392,16 @@ class TimeSeriesPlot_Plotly:
             else:
                 x_col = 'doy'
 
+            # Split data between focus year and all other years
             df_stats_part = df[df['year'] != self.focus_year].copy()
             df_focus_part = df[df['year'] == self.focus_year].copy()
 
             grouped = df_stats_part.groupby(x_col).agg({
                 y_data_name: ['quantile', 'mean', 'median'],
-                'time': 'first'
+                time_col: 'first'
             })
 
+            # Calculate quantiles for statistical ribbons
             quantiles_list = [0.0, 0.01, 0.05, 0.10, 0.25, 0.75, 0.90, 0.95, 0.99, 1.0]
             stats_quantiles = df_stats_part.groupby(x_col)[y_data_name].quantile(quantiles_list).unstack(level=-1)
             stats_quantiles.columns = [
@@ -382,15 +411,16 @@ class TimeSeriesPlot_Plotly:
 
             stats_quantiles['mean'] = grouped[(y_data_name, 'mean')]
             stats_quantiles['median'] = grouped[(y_data_name, 'median')]
-            stats_quantiles['time'] = grouped['time']['first']
+            stats_quantiles[time_col] = grouped[time_col]['first']
 
             stats_quantiles.reset_index(inplace=True)
 
+            # Process focus year data
             df_focus_grouped = (df_focus_part
                             .groupby(x_col)
                             .agg({
                                 y_data_name: 'mean',
-                                'time': 'first'
+                                time_col: 'first'
                             })
                             .reset_index())
 
@@ -399,7 +429,7 @@ class TimeSeriesPlot_Plotly:
             logging.debug("\nFocus data after groupby:")
             logging.debug(df_focus_grouped.head())
 
-            # Final merge
+            # Merge statistics with focus year data
             final_df = stats_quantiles.merge(
                 df_focus_grouped[[x_col, 'focus']],
                 on=x_col,
@@ -459,13 +489,13 @@ class TimeSeriesPlot_Plotly:
         position : float
             Position of the line on the axis.
         line_dash : str
-            Dash style of the line.
-        col : str
-            Column to apply the line to.
-        color : str
-            Color of the line.
-        label : str
-            Label for the line.
+            Dash style of the line ('solid', 'dash', 'dot', 'dashdot').
+        col : str, optional
+            Column to apply the line to. Default is 'all'.
+        color : str, optional
+            Color of the line. Default is 'black'.
+        label : str, optional
+            Label for the line. Default is empty string.
         """
         self.line_list.append({
             'orientation': orientation,
@@ -486,26 +516,26 @@ class TimeSeriesPlot_Plotly:
                       opacity: float = 0.2,
                       label: str = ''):
         """
-        Add a vertical or horizontal rectangle to the plot.
+        Add a rectangular zone to the plot.
 
         Parameters
         ----------
         orientation : str
             Orientation of the rectangle ('v' for vertical, 'h' for horizontal).
-        x0 : float
+        x0 : float, optional
             Starting X position of the rectangle.
-        x1 : float
+        x1 : float, optional
             Ending X position of the rectangle.
-        y0 : float
+        y0 : float, optional
             Starting Y position of the rectangle.
-        y1 : float
+        y1 : float, optional
             Ending Y position of the rectangle.
-        color : str
-            Color of the rectangle.
-        opacity : float
-            Opacity of the rectangle.
-        label : str
-            Label for the rectangle.
+        color : str, optional
+            Color of the rectangle. Default is 'black'.
+        opacity : float, optional
+            Opacity of the rectangle (0 to 1). Default is 0.2.
+        label : str, optional
+            Label for the rectangle. Default is empty string.
         """
         self.rectangle_list.append({
             'orientation': orientation,
@@ -543,7 +573,7 @@ class TimeSeriesPlot_Plotly:
         for i in range(12):
             adjusted_month_idx = (i + self.start_month - 1) % 12
             if i == 0:
-                shifted_starts.append(1)  # First month starts at day 1
+                shifted_starts.append(1)
             else:
                 cumulative_days += days_per_month[(adjusted_month_idx - 1) % 12]
                 shifted_starts.append(cumulative_days + 1)
@@ -604,18 +634,16 @@ class TimeSeriesPlot_Plotly:
 
     def create_figure(self) -> go.Figure:
         """
-        Create the plot figure.
+        Create the plot figure based on the configured settings and added data series.
 
         Returns
         -------
         go.Figure
-            Plotly figure object.
+            Plotly figure object ready for display.
         """
         fig = go.Figure()
 
-        # -----------------------------------------------------------
         # MODE = CHRONIQUE
-        # -----------------------------------------------------------
         if self.mode == 'chronique':
             for series in self.series_list:
                 df = series['df'].copy()
@@ -638,29 +666,17 @@ class TimeSeriesPlot_Plotly:
             end_year   = max(df['time']).year
 
             fig.update_layout(
-                title=self.title,
-                xaxis_title=self.x_axis_title,
-                yaxis_title=self.y_axis_title,
-
                 xaxis=dict(
                     type='date',
                     range=[f"{start_year}-01-01", f"{end_year}-12-31"],
                     dtick="M12",
                     tickformat="%Y",
                 ),
-                hovermode='x',
-                plot_bgcolor='white',
             )
 
-            fig.update_yaxes(
-                type='log' if self.log_y else 'linear'
-            )
-        # -----------------------------------------------------------
         # MODE = EVOLUTION
-        # -----------------------------------------------------------
         elif self.mode == 'evolution':
             all_x = []
-
             num_series = len(self.series_list)
             colors = self.generate_color_palette(num_series)
 
@@ -691,23 +707,15 @@ class TimeSeriesPlot_Plotly:
                 ticks, labels = self._get_month_ticks_for_days()
 
             fig.update_layout(
-                title=self.title,
-                xaxis_title=self.x_axis_title,
-                yaxis_title=self.y_axis_title,
                 xaxis=dict(
                     range=[1, max_x],
                     tickmode='array',
                     tickvals=ticks,
                     ticktext=labels
                 ),
-                plot_bgcolor='white',
             )
-            fig.update_yaxes(
-                type='log' if self.log_y else 'linear'
-            )
-        # -----------------------------------------------------------
+        
         # MODE = STATISTIC
-        # -----------------------------------------------------------
         elif self.mode == 'statistic':
             if not self.series_list:
                 logging.warning("No series for mode=statistics")
@@ -722,7 +730,6 @@ class TimeSeriesPlot_Plotly:
                 ('q10','q90', 'rgba(128,128,128,0.5)', 'Q10/Q90'),
                 ('q05','q95', 'rgba(128,128,128,0.4)', 'Q05/Q95'),
                 ('q01','q99', 'rgba(128,128,128,0.3)', 'Q01/Q99'),
-
             ]
 
             for lower_col, upper_col, fill_color, name in bands:
@@ -776,27 +783,17 @@ class TimeSeriesPlot_Plotly:
                 ticks, labels = self._get_month_ticks_for_days()
 
             fig.update_layout(
-                title=self.title,
-                xaxis_title=self.x_axis_title,
-                yaxis_title=self.y_axis_title,
                 xaxis=dict(
                     range=[1, max_x],
                     tickmode='array',
                     tickvals=ticks,
                     ticktext=labels
                 ),
-                plot_bgcolor='white',
-            )
-            fig.update_yaxes(
-                type='log' if self.log_y else 'linear'
             )
         else:
             logging.warning(f"Unknown mode: {self.mode}")
 
-        # -----------------------------------------------------------
-        # Adding lines / rectangles
-        # (Here we do not touch the 'type' of the axis)
-        # -----------------------------------------------------------
+        # Add lines and rectangles
         for line_dict in self.line_list:
             orientation = line_dict['orientation']
             position = line_dict['position']
@@ -850,35 +847,38 @@ class TimeSeriesPlot_Plotly:
                     annotation_position='top left'
                 )
 
-        # -----------------------------------------------------------
-        # Final update => style, without modifying the type of the X-axis
-        # -----------------------------------------------------------
+        # Final styling
+        fig.update_layout(
+            title=self.title,
+            xaxis_title=self.x_axis_title,
+            yaxis_title=self.y_axis_title,
+            plot_bgcolor='white',
+            legend=dict(
+                title=f"Légende :",
+                orientation='v',
+                yanchor='bottom',
+                y=0.25,
+                x=1.1,
+                xanchor='right',
+                bgcolor='rgba(255, 255, 255, 0.5)',
+                bordercolor='black',
+                borderwidth=1
+            )
+        )
+        
         fig.update_xaxes(
             mirror=True,
             ticks='outside',
-            showline=True,
             linecolor='black',
-            gridcolor='lightgrey',
-            zeroline=False
-        )
-        fig.update_yaxes(
-            mirror=True,
-            ticks='outside',
-            showline=True,
-            linecolor='black',
-            gridcolor='lightgrey',
             zeroline=False,
         )
 
-        fig.update_layout(
-            legend=dict(
-                title="Legend",
-                orientation='h',
-                yanchor='bottom',
-                y=1.02,
-                xanchor='right',
-                x=1
-            )
+        fig.update_yaxes(
+            mirror=True,
+            ticks='outside',
+            linecolor='black',
+            zeroline=False,
+            type='log' if self.log_y else 'linear'
         )
 
         return fig
@@ -889,48 +889,109 @@ class TimeSeriesPlot_Plotly:
 
         Parameters
         ----------
-        open_browser : bool
-            Whether to open the figure in a web browser.
+        open_browser : bool, optional
+            Whether to open the figure in a web browser. Default is False.
         """
         fig = self.create_figure()
         if open_browser:
             pyo.plot(fig, auto_open=True)
         else:
             fig.show()
+
+    def save(self, file_path: str, format: str = 'html', open_browser: bool = False):
+        """
+        Save the resulting figure to a file.
+        
+        Parameters
+        ----------
+        file_path : str
+            File path to save the figure.
+        format : str, optional
+            Format for saving the figure ('html' or 'png'). Default is 'html'.
+        open_browser : bool, optional
+            Whether to open the figure in a web browser. Default is False.
+        """
+        fig = self.create_figure()
+        if format == 'html':
+            pio.write_html(fig, file_path, auto_open=open_browser)
+        elif format == 'png':
+            fig.write_image(fig, file_path)
+        else:
+            logging.warning(f"Unsupported format: {format}. Saving as HTML.")
+            pio.write_html(fig, file_path, auto_open=open_browser)
+            
 #%%
 if __name__ == "__main__":
     csv_file_path = r"C:\\Users\\basti\\Documents\\Output_HydroModPy\\LakeRes\\Reservoir\\Donnees journalieres EBR\\dam_input_2004_2024.csv"
 
     df = pd.read_csv(csv_file_path, sep=";")
     df["time"] = pd.to_datetime(df["time"], format="%d/%m/%Y")
+    df["ajout"] = df["canut"] + df["meu"]
+    df["prelevement"] = df["resti"] + df["usine"]
+    df["delta_anthropique"] = df["ajout"] - df["prelevement"]
+    df["delta_anthropique_sum"] = df["delta_anthropique"].cumsum()
 
+    Vmin = 1850000
+    Vmax = 14500000
+
+    df["natural"] = None
+
+    # Boucle sur toutes les lignes de df
+    for i in range(len(df)):
+        if i == 0 or (i % 365) == 0:
+            # => On démarre une nouvelle année (ou tout début),
+            # on réinitialise "natural" au volume réel du lac
+            df.at[i, "natural"] = df.at[i, "cheze_vol"]
+        else:
+            # Jour normal : on calcule la différence journalière
+            delta = df.at[i, "cheze_vol"] - df.at[i-1, "cheze_vol"]
+
+            # On retire les apports canut + meu
+            delta_nat = delta - (df.at[i, "canut"] + df.at[i, "meu"])
+            # Volume naturel avant application des seuils
+            nat_before_thresh = df.at[i-1, "natural"] + delta_nat
+
+            # Application des seuils min / max
+            if nat_before_thresh < Vmin:
+                nat_today = Vmin
+            elif nat_before_thresh > Vmax:
+                nat_today = Vmax
+            else:
+                nat_today = nat_before_thresh
+
+            df.at[i, "natural"] = nat_today
+        
     plot = TimeSeriesPlot_Plotly(
-        title="",
+        title="Volume de la Cheze (2004-2024) - Evolution (Cumul)",
         x_axis_title="Date",
-        y_axis_title="Value",
-        x_range=(2004, 2024),
-        log_y=True,
-        mode='statistic',
-        focus_year=2018,
+        y_axis_title="Volume (m3)",
+        x_range=(2004, 2004),
+        log_y=False,
+        mode='evolution',
+        focus_year=2017,
         start_month=10,
+        cumul=True
     )
 
     plot.add_series(
         df=df,
         time_col="time",
-        var_col="cheze_lvl",
-        legend_name="tt",
-        freq='ME',
+        var_col="cheze_vol",
+        legend_name="Volume m3 de la Cheze",
+        freq='W',
         year_min=2004,
         year_max=2024,
-        # rolling_window=5,
+        rolling_window=5,
     )
 
-    # (Optional) Add a vertical line example:
-    # plot.add_line(orientation="v",
-    #               position="2010-01-01",
+    # # (Optional) Add a vertical line example:
+    # plot.add_line(orientation="h",
+    #               label="Limite du Barrage",
+    #               position=14500000,
     #               line_dash="dash",
     #               )
 
     plot.show(open_browser=True)
+    
+    # plot.save(f"C:\\Users\\basti\\OneDrive\\PhD\\03_Meeting\\EBR\\2025-02-26\\graph\\{plot.title}.html", format="html", open_browser=False)
 # %%
