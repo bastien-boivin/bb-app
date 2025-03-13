@@ -18,7 +18,7 @@ import src
 import importlib
 importlib.reload(src)
 
-from src.path import load_paths, get_selected_profile, set_selected_profile
+from src.path import load_paths, set_selected_profile
 
 def initialize_sidebar():
     # Chargement des chemins enregistrés
