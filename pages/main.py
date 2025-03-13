@@ -20,7 +20,6 @@ import importlib
 importlib.reload(src)
 
 from src.toolbox import LogManager
-from src.config import get_selected_profile
 # -----------------------------------------------------
 # Setup LogManger for all pages in the application
 # -----------------------------------------------------
