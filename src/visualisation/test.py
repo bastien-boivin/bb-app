@@ -32,13 +32,13 @@ class TimeSeriesPlot_Plotly:
       - Resample the time series (daily, weekly, monthly, etc.).
       - Apply either:
          * a standard rolling average (mode='default'),
-         * a multi-year rolling average (mode='evolution'),
+         * a multi-year rolling average (mode='annual_cycle'),
          * or statistical ribbons vs. a focus year (mode='statistics').
       - Add vertical/horizontal lines and rectangular zones.
       - Configure the plot's title, axis titles, axis ranges, and log scaling.
       - Display the plot in a browser or inline.
       - Specify a custom annual cycle starting month.
-      - Apply cumulative calculations for evolution and statistics modes.
+      - Apply cumulative calculations for annual_cycle and statistics modes.
     """
 
     def __init__(self,
@@ -48,7 +48,7 @@ class TimeSeriesPlot_Plotly:
                  x_range: tuple,
                  log_x: bool = False,
                  log_y: bool = False,
-                 mode: str = 'chronique',
+                 mode: str = 'historical',
                  focus_year: int = None,
                  start_month: int = None,
                  cumul: bool = False,
@@ -72,19 +72,19 @@ class TimeSeriesPlot_Plotly:
             Whether to use a logarithmic scale for the Y-axis. Default is False.
         mode : str, optional
             Plot mode selection:
-            - 'chronique' for a standard chronological time series plot,
-            - 'evolution' to plot multi-year curves on a single year axis (e.g., annual cycle),
-            - 'statistic' to display statistical ribbons (min/max/quantiles) plus one focus year.
-            Default is 'chronique'.
+            - 'historical' for a standard chronological time series plot,
+            - 'annual_cycle' to plot multi-year curves on a single year axis (e.g., annual cycle),
+            - 'statistics' to display statistical ribbons (min/max/quantiles) plus one focus year.
+            Default is 'historical'.
         focus_year : int, optional
-            The focus year for the 'statistic' mode. Required if mode is 'statistic'.
+            The focus year for the 'statistics' mode. Required if mode is 'statistics'.
         start_month : int, optional
             Specify a custom month (1-12) to start the annual cycle. If > 1, the annual
             cycle will begin on the 1st day of this month and end on the last day of the
             month before. Default is None (calendar year).
         cumul : bool, optional
-            If True, calculate cumulative values for evolution and statistic modes.
-            Not applicable in 'chronique' mode. Default is False.
+            If True, calculate cumulative values for annual_cycle and statistics modes.
+            Not applicable in 'historical' mode. Default is False.
         """
         
         self.title = title if title else f"Time Series Plot"
@@ -98,13 +98,13 @@ class TimeSeriesPlot_Plotly:
         self.start_month = start_month if start_month is not None and start_month > 1 else None
         self.cumul = cumul
         
-        if self.cumul and self.mode == 'chronique':
-            logging.warning("Cumulative option is not applicable in 'chronique' mode. It will be ignored.")
+        if self.cumul and self.mode == 'historical':
+            logging.warning("Cumulative option is not applicable in 'historical' mode. It will be ignored.")
             self.cumul = False      
 
-        if self.mode == 'statistic' and self.focus_year is None:
-            logging.warning("The 'statistic' mode requires a reference year (focus_year). The 'chroniques' mode will be used instead.")
-            self.mode = 'chroniques'
+        if self.mode == 'statistics' and self.focus_year is None:
+            logging.warning("The 'statistics' mode requires a reference year (focus_year). The 'historicals' mode will be used instead.")
+            self.mode = 'historicals'
 
         self.series_list = []
         self.line_list = []
@@ -148,15 +148,15 @@ class TimeSeriesPlot_Plotly:
             - 'ME' for monthly at month end
         rolling_window : int, optional
             Rolling window size for averaging (number of years to include in each window).
-            Not applicable in 'statistic' mode.
+            Not applicable in 'statistics' mode.
         """
         self.freq = freq
         self.legend_name = legend_name
 
         df[time_col] = pd.to_datetime(df[time_col])
 
-        if self.mode == 'statistic' and rolling_window is not None:
-            logging.warning("The 'statistic' mode cannot be used with a rolling_window. The rolling_window will be ignored.")
+        if self.mode == 'statistics' and rolling_window is not None:
+            logging.warning("The 'statistics' mode cannot be used with a rolling_window. The rolling_window will be ignored.")
             rolling_window = None
 
         if year_min is not None:
@@ -276,7 +276,7 @@ class TimeSeriesPlot_Plotly:
             
         # Apply cumulative calculation if enabled
         if self.cumul:
-            if self.mode in ['evolution', 'statistic']:
+            if self.mode in ['annual_cycle', 'statistics']:
                 for year in df['year'].unique():
                     year_mask = df['year'] == year
                     if self.freq == 'W':
@@ -339,8 +339,8 @@ class TimeSeriesPlot_Plotly:
 
             df = pd.concat(output_dfs, ignore_index=True)
 
-        # Process data for chronique mode
-        if self.mode == 'chronique':
+        # Process data for historical mode
+        if self.mode == 'historical':
             final_df = df.copy()
             final_df.rename(columns={time_col: 'time'}, inplace=True)
 
@@ -353,8 +353,8 @@ class TimeSeriesPlot_Plotly:
                 'rolling_window': rolling_window
             })
 
-        # Process data for evolution mode
-        elif self.mode == 'evolution':
+        # Process data for annual_cycle mode
+        elif self.mode == 'annual_cycle':
             if self.freq == 'W':
                 grouped = df.groupby(['year', 'week_num'])[y_data_name].mean().reset_index()
                 x_col = 'week_num'
@@ -380,11 +380,11 @@ class TimeSeriesPlot_Plotly:
                     'legend_name': legend_text,
                     'freq': freq,
                     'rolling_window': rolling_window,
-                    'is_evolution': True
+                    'is_annual_cycle': True
                 })
 
         # Process data for statistic mode
-        elif self.mode == 'statistic':
+        elif self.mode == 'statistics':
             if self.freq == 'W':
                 x_col = 'week_num'
             elif self.freq == 'ME':
@@ -643,27 +643,81 @@ class TimeSeriesPlot_Plotly:
         """
         fig = go.Figure()
 
-        # MODE = CHRONIQUE
-        if self.mode == 'chronique':
+        # MODE = historical
+        # Remplacez la section MODE = historical dans la méthode create_figure() par ce code
+        # MODE = historical
+        if self.mode == 'historical':
+            # Tracer d'abord les séries temporelles normales
             for series in self.series_list:
                 df = series['df'].copy()
                 legend_name = series.get('legend_name', 'var')
                 var_col = series['var_col']
+                self.var_col = var_col  # Stocker pour référence ultérieure
 
+                # Tracer la série temporelle principale
                 fig.add_trace(
                     go.Scatter(
                         x=df['time'],
                         y=df[var_col],
                         mode='lines',
                         name=legend_name,
+                        line=dict(color='rgb(31, 119, 180)'),  # Bleu par défaut
                         hovertemplate=(
                             "Date : %{x|%d/%m/%Y}<br>" + f"{var_col} : " + "%{y:.2f}<extra></extra>"
                         )
                     )
                 )
+                
+                # Si une année de référence est spécifiée, la superposer sur toutes les années
+                if self.focus_year is not None:
+                    # Extraire les données de l'année de référence
+                    mask_focus_year = df['time'].dt.year == self.focus_year
+                    df_focus = df[mask_focus_year].copy()
+                    
+                    if not df_focus.empty:
+                        
+                        # Pour chaque année dans la plage
+                        unique_years = df['time'].dt.year.unique()
+                        unique_years = unique_years[unique_years != self.focus_year]  # Exclure l'année de référence
+                        
+                        for year in unique_years:
+                            # Calculer le décalage entre l'année courante et l'année de référence
+                            year_offset = pd.DateOffset(years=year - self.focus_year)
+                            
+                            # Créer une version décalée des données de l'année de référence
+                            df_shifted = df_focus.copy()
+                            df_shifted['time'] = df_shifted['time'] + year_offset
+                            
+                            # Ajouter la série décalée au graphique (avec une couleur différente et en pointillé)
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=df_shifted['time'],
+                                    y=df_shifted[self.var_col],
+                                    mode='lines',
+                                    line=dict(color='rgba(255, 165, 0, 0.5)', dash='dot', width=1),  # Orange transparent en pointillé
+                                    name=f'Année de référence {self.focus_year} projetée)',
+                                    showlegend=bool(year == unique_years[0]),  # Ne montrer qu'une seule fois dans la légende
+                                    hovertext=f"Année projetée {year}",
+                                )
+                            )
+                        
+                        # Mettre en évidence l'année de référence elle-même
+                        fig.add_trace(
+                            go.Scatter(
+                                x=df_focus['time'],
+                                y=df_focus[self.var_col],
+                                mode='lines',
+                                line=dict(color='rgb(255, 0, 0)', width=2),  # Rouge plus épais
+                                name=f'Année de référence {self.focus_year}',
+                                hovertemplate=(
+                                    "Date : %{x|%d/%m/%Y}<br>" + f"{var_col} : " + "%{y:.2f}<extra></extra>"
+                                )
+                            )
+                        )
 
+            # Définir la plage d'années pour l'axe X
             start_year = min(df['time']).year
-            end_year   = max(df['time']).year
+            end_year = max(df['time']).year
 
             fig.update_layout(
                 xaxis=dict(
@@ -672,10 +726,20 @@ class TimeSeriesPlot_Plotly:
                     dtick="M12",
                     tickformat="%Y",
                 ),
+                hovermode='x unified',
+            )
+            
+            fig.update_layout(
+                # Configurer le mode de survol pour qu'il sélectionne le point le plus proche du curseur
+
+                
+                # Réduire la distance maximale à laquelle un point peut être sélectionné
+                hoverdistance=1,
             )
 
-        # MODE = EVOLUTION
-        elif self.mode == 'evolution':
+
+        # MODE = annual_cycle
+        elif self.mode == 'annual_cycle':
             all_x = []
             num_series = len(self.series_list)
             colors = self.generate_color_palette(num_series)
@@ -716,11 +780,11 @@ class TimeSeriesPlot_Plotly:
             )
         
         # MODE = STATISTIC
-        elif self.mode == 'statistic':
+        elif self.mode == 'statistics':
             if not self.series_list:
                 logging.warning("No series for mode=statistics")
                 return fig
-
+            
             df = self.series_list[0]['df']
             x_col = 'x_value'
 
@@ -926,51 +990,17 @@ if __name__ == "__main__":
 
     df = pd.read_csv(csv_file_path, sep=";")
     df["time"] = pd.to_datetime(df["time"], format="%d/%m/%Y")
-    df["ajout"] = df["canut"] + df["meu"]
-    df["prelevement"] = df["resti"] + df["usine"]
-    df["delta_anthropique"] = df["ajout"] - df["prelevement"]
-    df["delta_anthropique_sum"] = df["delta_anthropique"].cumsum()
-
-    Vmin = 1850000
-    Vmax = 14500000
-
-    df["natural"] = None
-
-    # Boucle sur toutes les lignes de df
-    for i in range(len(df)):
-        if i == 0 or (i % 365) == 0:
-            # => On démarre une nouvelle année (ou tout début),
-            # on réinitialise "natural" au volume réel du lac
-            df.at[i, "natural"] = df.at[i, "cheze_vol"]
-        else:
-            # Jour normal : on calcule la différence journalière
-            delta = df.at[i, "cheze_vol"] - df.at[i-1, "cheze_vol"]
-
-            # On retire les apports canut + meu
-            delta_nat = delta - (df.at[i, "canut"] + df.at[i, "meu"])
-            # Volume naturel avant application des seuils
-            nat_before_thresh = df.at[i-1, "natural"] + delta_nat
-
-            # Application des seuils min / max
-            if nat_before_thresh < Vmin:
-                nat_today = Vmin
-            elif nat_before_thresh > Vmax:
-                nat_today = Vmax
-            else:
-                nat_today = nat_before_thresh
-
-            df.at[i, "natural"] = nat_today
         
     plot = TimeSeriesPlot_Plotly(
-        title="Volume de la Cheze (2004-2024) - Evolution (Cumul)",
+        title="Volume de la Cheze (2004-2024) - annual_cycle (Cumul)",
         x_axis_title="Date",
         y_axis_title="Volume (m3)",
         x_range=(2004, 2004),
         log_y=False,
-        mode='evolution',
+        mode='historical',
         focus_year=2017,
         start_month=10,
-        cumul=True
+        cumul=False
     )
 
     plot.add_series(
@@ -978,10 +1008,10 @@ if __name__ == "__main__":
         time_col="time",
         var_col="cheze_vol",
         legend_name="Volume m3 de la Cheze",
-        freq='W',
+        freq='D',
         year_min=2004,
         year_max=2024,
-        rolling_window=5,
+        rolling_window=2,
     )
 
     # # (Optional) Add a vertical line example:
