@@ -17,7 +17,7 @@ if cwd != root_dir:
     os.chdir(root_dir)
 
 # -----------------------------------------------------
-# Modules
+# Module Imports
 # -----------------------------------------------------
 import src
 import importlib
@@ -25,26 +25,62 @@ importlib.reload(src)
 
 class TimeSeriesPlot_Plotly:
     """
-    A class for creating and displaying time series plots using Plotly.
-
-    This class allows users to:
-      - Add time series data (with optional filtering by years).
-      - Resample the time series (daily, weekly, monthly, etc.).
-      - Apply either:
-         * a standard rolling average (mode='default'),
-         * a multi-year rolling average (mode='annual_cycle'),
-         * or statistical ribbons vs. a focus year (mode='statistics').
-      - Add vertical/horizontal lines and rectangular zones.
-      - Configure the plot's title, axis titles, axis ranges, and log scaling.
-      - Display the plot in a browser or inline.
-      - Specify a custom annual cycle starting month.
-      - Apply cumulative calculations for annual_cycle and statistics modes.
+    A class for creating and displaying interactive time series plots using Plotly.
+    
+    This class provides a comprehensive solution for time series data visualization with
+    multiple analysis modes, data transformation options, and display customizations.
+    
+    Features
+    --------
+    - Time series data filtering, resampling, and interpolation
+    - Three visualization modes: historical chronological series, annual cycle comparison, 
+      and statistical analysis with reference year comparison
+    - Support for different time resolutions (daily, weekly, monthly)
+    - Rolling window averaging across multiple years
+    - Custom annual cycle starting month
+    - Cumulative calculations for annual cycle and statistical analysis
+    - Reference year projection across timeline
+    - Statistical quantile visualization with ribbons
+    - Interactive elements with hover information
+    - Automatic title and filename generation
+    - Export to HTML or PNG formats
+    
+    Parameters
+    ----------
+    title : str, optional
+        Title of the plot. If None, a title will be auto-generated.
+    x_axis_title : str, optional
+        Title for the X-axis. Default is "Date".
+    y_axis_title : str, optional
+        Title for the Y-axis. Default is "Valeur".
+    x_range : tuple, optional
+        Tuple specifying the start and end year for the X-axis range (e.g., (2000, 2020)).
+    log_x : bool, optional
+        Whether to use a logarithmic scale for the X-axis. Default is False.
+    log_y : bool, optional
+        Whether to use a logarithmic scale for the Y-axis. Default is False.
+    mode : str, optional
+        Plot mode selection:
+        - 'historical' for a standard chronological time series plot,
+        - 'annual_cycle' to plot multi-year curves on a single year axis (e.g., annual cycle),
+        - 'statistics' to display statistical ribbons (min/max/quantiles) plus one focus year.
+        Default is 'historical'.
+    focus_year : int, optional
+        The focus year for the 'statistics' mode or reference year in 'historical' mode.
+        Required if mode is 'statistics'.
+    start_month : int, optional
+        Specify a custom month (1-12) to start the annual cycle. If > 1, the annual
+        cycle will begin on the 1st day of this month and end on the last day of the
+        month before. Default is None (calendar year).
+    cumul : bool, optional
+        If True, calculate cumulative values for annual_cycle and statistics modes.
+        Not applicable in 'historical' mode. Default is False.
     """
 
     def __init__(self,
                  title: str = None,
                  x_axis_title: str = "Date",
-                 y_axis_title: str = "Valeur",
+                 y_axis_title: str = "Value",
                  x_range: tuple = None,
                  log_x: bool = False,
                  log_y: bool = False,
@@ -63,7 +99,7 @@ class TimeSeriesPlot_Plotly:
         x_axis_title : str, optional
             Title for the X-axis. Default is "Date".
         y_axis_title : str, optional
-            Title for the Y-axis. Default is "Valeur".
+            Title for the Y-axis. Default is "Value".
         x_range : tuple, optional
             Tuple specifying the start and end year for the X-axis range (e.g., (2000, 2020)).
         log_x : bool, optional
@@ -77,7 +113,8 @@ class TimeSeriesPlot_Plotly:
             - 'statistics' to display statistical ribbons (min/max/quantiles) plus one focus year.
             Default is 'historical'.
         focus_year : int, optional
-            The focus year for the 'statistics' mode. Required if mode is 'statistics'.
+            The focus year for the 'statistics' mode or reference year in 'historical' mode.
+            Required if mode is 'statistics'.
         start_month : int, optional
             Specify a custom month (1-12) to start the annual cycle. If > 1, the annual
             cycle will begin on the 1st day of this month and end on the last day of the
@@ -104,7 +141,7 @@ class TimeSeriesPlot_Plotly:
             self.cumul = False      
 
         if self.mode == 'statistics' and self.focus_year is None:
-            logging.warning("The 'statistics' mode requires a reference year (focus_year). The 'historicals' mode will be used instead.")
+            logging.warning("The 'statistics' mode requires a reference year (focus_year). The 'historical' mode will be used instead.")
             self.mode = 'historical'
 
         self.series_list = []
@@ -123,11 +160,11 @@ class TimeSeriesPlot_Plotly:
                    ):
         """
         Add a time series to the plot.
-
-        This method prepares the time series data for visualization according to the 
-        specified mode and parameters. It can filter by year range, resample to different
-        frequencies, apply rolling window averages, and calculate cumulative values.
-
+        
+        This method processes and prepares time series data for visualization according to 
+        the specified parameters and selected mode. It handles data filtering, resampling,
+        rolling averages, and specialized processing for each visualization mode.
+        
         Parameters
         ----------
         df : pd.DataFrame
@@ -150,6 +187,16 @@ class TimeSeriesPlot_Plotly:
         rolling_window : int, optional
             Rolling window size for averaging (number of years to include in each window).
             Not applicable in 'statistics' mode.
+            
+        Notes
+        -----
+        The method processes data differently based on the visualization mode:
+        - 'historical': Prepares chronological time series with optional reference year projection
+        - 'annual_cycle': Creates multi-year comparison on a common timeline
+        - 'statistics': Calculates statistical metrics (mean, median, quantiles) and compares with a focus year
+        
+        It also handles special cases like incomplete time series, leap years,
+        custom annual cycles, and cumulative calculations.
         """
         self.freq = freq
         self.legend_name = legend_name
@@ -385,7 +432,7 @@ class TimeSeriesPlot_Plotly:
                     'is_annual_cycle': True
                 })
 
-        # Process data for statistic mode
+        # Process data for statistics mode
         elif self.mode == 'statistics':
             if self.freq == 'W':
                 x_col = 'week_num'
@@ -451,23 +498,28 @@ class TimeSeriesPlot_Plotly:
                 'is_statistics': True
             })
         
-        # Générer un titre automatiquement si aucun titre personnalisé n'a été fourni
+        # Generate automatic title if none was provided
         if self.title is None:
             self.title = self._generate_auto_title()
 
     def generate_color_palette(self, num_colors: int) -> list:
         """
         Generate a color palette for the plot.
-
+        
         Parameters
         ----------
         num_colors : int
             Number of colors to generate.
-
+            
         Returns
         -------
         list
-            List of RGB color strings.
+            List of RGB color strings formatted for Plotly.
+            
+        Notes
+        -----
+        Uses matplotlib's coolwarm colormap to generate a balanced
+        spectrum of colors for distinguishing multiple series.
         """
         if num_colors <= 1:
             return ['rgb(0, 0, 255)']
@@ -479,7 +531,26 @@ class TimeSeriesPlot_Plotly:
         ]
 
     def _generate_auto_filename(self):
-
+        """
+        Generate an automatic filename based on plot parameters.
+        
+        Returns
+        -------
+        str
+            A filename string combining mode, parameters, and data source information.
+            
+        Notes
+        -----
+        The filename includes components like:
+        - Visualization mode
+        - Focus year (if applicable)
+        - Frequency (daily, weekly, monthly)
+        - Rolling window size (if applicable)
+        - Cumulative flag (if enabled)
+        - Variable name
+        
+        Components are joined with underscores to create a filesystem-friendly name.
+        """
         components = []
         
         components.append(self.mode)
@@ -506,32 +577,51 @@ class TimeSeriesPlot_Plotly:
         return filename
 
     def _generate_auto_title(self):
-
+        """
+        Generate an automatic descriptive title based on plot parameters.
+        
+        Returns
+        -------
+        str
+            A formatted title string that describes the visualization's key characteristics.
+            
+        Notes
+        -----
+        The title includes components like:
+        - Visualization mode in a readable format
+        - Data series description
+        - Year range
+        - Reference year (if applicable)
+        - Cumulative calculation indicator
+        - Rolling window information
+        
+        Components are formatted to create a human-readable title.
+        """
         components = []
 
         mode_names = {
-            'historical': 'Série chronologique',
-            'annual_cycle': 'Cycle annuel',
-            'statistics': 'Statistiques'
+            'historical': 'Time Series',
+            'annual_cycle': 'Annual Cycle',
+            'statistics': 'Statistical Analysis'
         }
         components.append(mode_names.get(self.mode, self.mode.capitalize()))
         
         if hasattr(self, 'legend_name') and self.legend_name:
-            components.append(f"de {self.legend_name}")
+            components.append(f"of {self.legend_name}")
         elif hasattr(self, 'var_col') and self.var_col:
-            components.append(f"de {self.var_col}")
+            components.append(f"of {self.var_col}")
         
         if self.x_range and len(self.x_range) == 2:
             components.append(f"({self.x_range[0]}-{self.x_range[1]})")
         
         if self.focus_year is not None:
-            components.append(f"- Année de référence: {self.focus_year}")
+            components.append(f"- Reference Year: {self.focus_year}")
         
         if self.cumul:
-            components.append("(Cumulatif)")
+            components.append("(Cumulative)")
         
         if self.rolling_window is not None:
-            components.append(f"- Moyenne glissante de {self.rolling_window} ans")
+            components.append(f"- {self.rolling_window}-year Rolling Average")
         
         title = " ".join(components)
         
@@ -545,8 +635,8 @@ class TimeSeriesPlot_Plotly:
                  color: str = 'black',
                  label: str = ''):
         """
-        Add a vertical or horizontal line to the plot.
-
+        Add a vertical or horizontal reference line to the plot.
+        
         Parameters
         ----------
         orientation : str
@@ -561,6 +651,11 @@ class TimeSeriesPlot_Plotly:
             Color of the line. Default is 'black'.
         label : str, optional
             Label for the line. Default is empty string.
+            
+        Notes
+        -----
+        This method only stores the line details; the actual line is
+        added to the plot when create_figure() is called.
         """
         self.line_list.append({
             'orientation': orientation,
@@ -581,8 +676,8 @@ class TimeSeriesPlot_Plotly:
                       opacity: float = 0.2,
                       label: str = ''):
         """
-        Add a rectangular zone to the plot.
-
+        Add a rectangular highlight zone to the plot.
+        
         Parameters
         ----------
         orientation : str
@@ -601,6 +696,11 @@ class TimeSeriesPlot_Plotly:
             Opacity of the rectangle (0 to 1). Default is 0.2.
         label : str, optional
             Label for the rectangle. Default is empty string.
+            
+        Notes
+        -----
+        This method only stores the rectangle details; the actual rectangle is
+        added to the plot when create_figure() is called.
         """
         self.rectangle_list.append({
             'orientation': orientation,
@@ -615,12 +715,18 @@ class TimeSeriesPlot_Plotly:
 
     def _get_month_ticks_for_days(self):
         """
-        Get month ticks for daily data, adjusted for start_month.
+        Generate month tick positions and labels for daily data.
         
         Returns
         -------
         tuple
-            Tuple containing month starts and month labels.
+            (month_positions, month_labels) where month_positions is a list
+            of day numbers where months start, and month_labels are the
+            corresponding month name abbreviations.
+            
+        Notes
+        -----
+        Handles adjustments for custom annual cycle starting months.
         """
         standard_month_starts = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
         standard_month_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -647,12 +753,18 @@ class TimeSeriesPlot_Plotly:
 
     def _get_month_ticks_for_weeks(self):
         """
-        Get month ticks for weekly data, adjusted for start_month.
+        Generate month tick positions and labels for weekly data.
         
         Returns
         -------
         tuple
-            Tuple containing week starts and month labels.
+            (week_positions, month_labels) where week_positions is a list
+            of week numbers where months approximately start, and month_labels
+            are the corresponding month name abbreviations.
+            
+        Notes
+        -----
+        Handles adjustments for custom annual cycle starting months.
         """
         standard_week_starts = [1, 6, 10, 14, 18, 22, 26, 30, 35, 39, 43, 48]
         standard_month_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -679,12 +791,18 @@ class TimeSeriesPlot_Plotly:
 
     def _get_month_ticks_for_months(self):
         """
-        Get month ticks for monthly data, adjusted for start_month.
+        Generate month tick positions and labels for monthly data.
         
         Returns
         -------
         tuple
-            Tuple containing month numbers and month labels.
+            (month_numbers, month_labels) where month_numbers is a list
+            of month indices (1-12), and month_labels are the corresponding
+            month name abbreviations.
+            
+        Notes
+        -----
+        Handles adjustments for custom annual cycle starting months.
         """
         standard_month_numbers = list(range(1, 13))
         standard_month_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -699,88 +817,97 @@ class TimeSeriesPlot_Plotly:
 
     def create_figure(self) -> go.Figure:
         """
-        Create the plot figure based on the configured settings and added data series.
-
+        Create and configure the Plotly figure object.
+        
         Returns
         -------
         go.Figure
-            Plotly figure object ready for display.
+            A fully configured Plotly figure object ready for display or export.
+            
+        Notes
+        -----
+        This method performs different visualization operations based on the selected mode:
+        - 'historical': Creates a chronological time series plot with optional reference year
+          projections across the timeline
+        - 'annual_cycle': Creates multiple series with common time axis for yearly comparison
+        - 'statistics': Creates statistical ribbons (quantiles) alongside reference year data
+        
+        It also adds any configured reference lines and rectangles, and applies
+        styling to the plot.
         """
         fig = go.Figure()
 
         # MODE = historical
-        # Remplacez la section MODE = historical dans la méthode create_figure() par ce code
-        # MODE = historical
         if self.mode == 'historical':
-            # Tracer d'abord les séries temporelles normales
+            # Trace the main time series first
             for series in self.series_list:
                 df = series['df'].copy()
                 legend_name = series.get('legend_name', 'var')
                 var_col = series['var_col']
-                self.var_col = var_col  # Stocker pour référence ultérieure
+                self.var_col = var_col  # Store for later reference
 
-                # Tracer la série temporelle principale
+                # Add the main time series trace
                 fig.add_trace(
                     go.Scatter(
                         x=df['time'],
                         y=df[var_col],
                         mode='lines',
                         name=legend_name,
-                        line=dict(color='rgb(31, 119, 180)'),  # Bleu par défaut
+                        line=dict(color='rgb(31, 119, 180)'),  # Default blue
                         hovertemplate=(
                             "Date : %{x|%d/%m/%Y}<br>" + f"{var_col} : " + "%{y:.2f}<extra></extra>"
                         )
                     )
                 )
                 
-                # Si une année de référence est spécifiée, la superposer sur toutes les années
+                # If a reference year is specified, project it across all years
                 if self.focus_year is not None:
-                    # Extraire les données de l'année de référence
+                    # Extract reference year data
                     mask_focus_year = df['time'].dt.year == self.focus_year
                     df_focus = df[mask_focus_year].copy()
                     
                     if not df_focus.empty:
                         
-                        # Pour chaque année dans la plage
+                        # For each year in the range
                         unique_years = df['time'].dt.year.unique()
-                        unique_years = unique_years[unique_years != self.focus_year]  # Exclure l'année de référence
+                        unique_years = unique_years[unique_years != self.focus_year]  # Exclude the reference year
                         
                         for year in unique_years:
-                            # Calculer le décalage entre l'année courante et l'année de référence
+                            # Calculate the offset between current year and reference year
                             year_offset = pd.DateOffset(years=year - self.focus_year)
                             
-                            # Créer une version décalée des données de l'année de référence
+                            # Create a shifted version of the reference year data
                             df_shifted = df_focus.copy()
                             df_shifted['time'] = df_shifted['time'] + year_offset
                             
-                            # Ajouter la série décalée au graphique (avec une couleur différente et en pointillé)
+                            # Add the shifted series to the plot (with different styling)
                             fig.add_trace(
                                 go.Scatter(
                                     x=df_shifted['time'],
                                     y=df_shifted[self.var_col],
                                     mode='lines',
-                                    line=dict(color='rgba(255, 165, 0, 0.5)', dash='dot', width=1),  # Orange transparent en pointillé
-                                    name=f'Référence {self.focus_year}',
-                                    showlegend=bool(year == unique_years[0]),  # Ne montrer qu'une seule fois dans la légende
-                                    hovertext=f"Année projetée {year}",
+                                    line=dict(color='rgba(255, 165, 0, 0.5)', dash='dot', width=1),  # Transparent orange dotted
+                                    name=f'Reference {self.focus_year}',
+                                    showlegend=bool(year == unique_years[0]),  # Only show once in legend
+                                    hovertext=f"Projected year {year}",
                                 )
                             )
                         
-                        # Mettre en évidence l'année de référence elle-même
+                        # Highlight the reference year itself
                         fig.add_trace(
                             go.Scatter(
                                 x=df_focus['time'],
                                 y=df_focus[self.var_col],
                                 mode='lines',
-                                line=dict(color='rgb(255, 0, 0)', width=2),  # Rouge plus épais
-                                name=f'Référence {self.focus_year}',
+                                line=dict(color='rgb(255, 0, 0)', width=2),  # Thicker red
+                                name=f'Reference {self.focus_year}',
                                 hovertemplate=(
                                     "Date : %{x|%d/%m/%Y}<br>" + f"{var_col} : " + "%{y:.2f}<extra></extra>"
                                 )
                             )
                         )
 
-            # Définir la plage d'années pour l'axe X
+            # Set the year range for X axis
             start_year = min(df['time']).year
             end_year = max(df['time']).year
 
@@ -836,7 +963,7 @@ class TimeSeriesPlot_Plotly:
                 ),
             )
         
-        # MODE = STATISTIC
+        # MODE = statistics
         elif self.mode == 'statistics':
             if not self.series_list:
                 logging.warning("No series for mode=statistics")
@@ -890,7 +1017,7 @@ class TimeSeriesPlot_Plotly:
                 y=df['focus'],
                 mode='lines',
                 line=dict(color='black'),
-                name='Focus'
+                name='Reference Year'
             ))
 
             if self.freq == 'W':
@@ -914,7 +1041,7 @@ class TimeSeriesPlot_Plotly:
         else:
             logging.warning(f"Unknown mode: {self.mode}")
 
-        # Add lines and rectangles
+        # Add reference lines and rectangles
         for line_dict in self.line_list:
             orientation = line_dict['orientation']
             position = line_dict['position']
@@ -975,7 +1102,7 @@ class TimeSeriesPlot_Plotly:
             yaxis_title=self.y_axis_title,
             plot_bgcolor='white',
             legend=dict(
-                title=f"Légende :",
+                title="Legend:",
                 orientation='v',
                 yanchor='bottom',
                 y=0,
@@ -1006,12 +1133,18 @@ class TimeSeriesPlot_Plotly:
 
     def show(self, open_browser: bool = False):
         """
-        Display the resulting figure.
-
+        Display the visualization.
+        
         Parameters
         ----------
         open_browser : bool, optional
             Whether to open the figure in a web browser. Default is False.
+            
+        Notes
+        -----
+        When open_browser is False, the figure is displayed inline in
+        the current environment (e.g., Jupyter notebook). When True,
+        the figure opens in the default web browser.
         """
         fig = self.create_figure()
         if open_browser:
@@ -1021,18 +1154,25 @@ class TimeSeriesPlot_Plotly:
 
     def save(self, file_path: str = None, file_name: str = None, format: str = 'html', open_browser: bool = False):
         """
-        Save the resulting figure to a file.
+        Save the visualization to a file.
         
         Parameters
         ----------
         file_path : str, optional
-            Directory path to save the figure. If None, uses the current directory.
+            Directory path to save the figure. If None, uses the 'output' directory
+            in the root directory, or current directory as fallback.
         file_name : str, optional
-            Name of the file without extension. If None, a name will be auto-generated.
+            Name of the file without extension. If None, a name will be auto-generated
+            based on plot parameters.
         format : str, optional
             Format for saving the figure ('html' or 'png'). Default is 'html'.
         open_browser : bool, optional
-            Whether to open the figure in a web browser. Default is False.
+            Whether to open the figure in a web browser after saving. Default is False.
+            
+        Notes
+        -----
+        HTML format provides an interactive visualization that can be viewed in a browser.
+        PNG format provides a static image suitable for reports or publications.
         """
         fig = self.create_figure()
 
@@ -1066,7 +1206,7 @@ if __name__ == "__main__":
     plot = TimeSeriesPlot_Plotly(
         x_axis_title="Date",
         y_axis_title="Volume (m3)",
-        x_range=(2004, 2004),
+        x_range=(2004, 2024),
         log_y=False,
         mode='historical',
         focus_year=2017,
@@ -1078,21 +1218,22 @@ if __name__ == "__main__":
         df=df,
         time_col="time",
         var_col="cheze_vol",
-        legend_name="Volume m3 de la Cheze",
+        legend_name="Volume m3 of Cheze",
         freq='D',
         year_min=2004,
         year_max=2024,
         rolling_window=2,
     )
 
-    # # (Optional) Add a vertical line example:
+    # # Example of adding a reference line:
     # plot.add_line(orientation="h",
-    #               label="Limite du Barrage",
+    #               label="Dam Limit",
     #               position=14500000,
     #               line_dash="dash",
     #               )
 
     plot.show(open_browser=True)
     
-    #plot.save(open_browser=False)
+    # Example of saving with auto-generated filename
+    # plot.save(open_browser=False)
 # %%
