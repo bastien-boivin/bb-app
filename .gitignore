@@ -1,2 +1,4 @@
 __pycache__/
 /temp-plot.html
+/output/*.html
+/output/*.png
