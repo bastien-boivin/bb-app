@@ -98,6 +98,7 @@ default_rolling_window = default_params.get("rolling_window", 5)
 # Only the (year_min, year_max) interval is stored in the JSON.
 default_year_min = default_params.get("year_min", 2004)
 default_year_max = default_params.get("year_max", 2024)
+start_month = default_params.get("start_month", 1)
 
 # ------------------------------------------------------------------
 # Streamlit layout
@@ -184,6 +185,13 @@ rolling_window = st.sidebar.slider(
     value=default_rolling_window
 )
 
+start_month = st.sidebar.slider(
+    "Start month",
+    min_value=1,
+    max_value=12,
+    value=start_month
+)
+
 # 7) Run button
 run_button = st.sidebar.button("Run")
 
@@ -256,16 +264,16 @@ if data_lake_path and os.path.exists(data_lake_path):
 # Chronique Vol
 #-----------------------------------------------------
 
-    tab1, tab2 = st.tabs(["Standard", "Moyenne glissante"])
+    tab1, tab2, tab3 = st.tabs(["Standard", "Moyenne glissante", "Comparaison"])
     with tab1:
         # Create the TimeSeriesPlot_Plotly object with correct parameters
         plotter = TimeSeriesPlot_Plotly(
-            title="Chroniques",
             x_axis_title="Date",
-            y_axis_title="Value",
+            y_axis_title="Volume (m3)",
             x_range=(year_min_selected, year_max_selected),
             log_y=log_y,
-            mode='chronique'
+            mode='historical',
+            start_month=start_month
         )
 
         # Add the series to the plot
@@ -273,7 +281,7 @@ if data_lake_path and os.path.exists(data_lake_path):
             df=df_filtered,
             time_col="time",
             var_col="cheze_vol",
-            legend_name="Data",
+            legend_name="Volume m3 de la Cheze",
             freq=freq,
             year_min=year_min_selected,
             year_max=year_max_selected,
@@ -296,12 +304,12 @@ if data_lake_path and os.path.exists(data_lake_path):
     with tab2:
         # Create the TimeSeriesPlot_Plotly object with correct parameters
         plotter = TimeSeriesPlot_Plotly(
-            title="Chroniques",
             x_axis_title="Date",
-            y_axis_title="Value",
+            y_axis_title="Volume (m3)",
             x_range=(year_min_selected, year_max_selected),
             log_y=log_y,
-            mode='chronique'
+            mode='historical',
+            start_month=start_month
         )
 
         # Add the series to the plot
@@ -309,11 +317,47 @@ if data_lake_path and os.path.exists(data_lake_path):
             df=df_filtered,
             time_col="time",
             var_col="cheze_vol",
-            legend_name="Data",
+            legend_name="Volume m3 de la Cheze",
             freq=freq,
             year_min=year_min_selected,
             year_max=year_max_selected,
             rolling_window=rolling_window
+        )
+        
+        plotter.add_line(
+                orientation='h',
+                position=14500000,
+                line_dash='dash',
+                col='all',
+                color='red',
+                label='Volume Maximal 14.5Mm3'
+                )
+
+        # Create and display the plot
+        plotter.fig = plotter.create_figure()
+        st.plotly_chart(plotter.fig, theme="streamlit", use_container_width=True)
+    
+    with tab3:
+        # Create the TimeSeriesPlot_Plotly object with correct parameters
+        plotter = TimeSeriesPlot_Plotly(
+            x_axis_title="Date",
+            y_axis_title="Volume (m3)",
+            x_range=(year_min_selected, year_max_selected),
+            log_y=log_y,
+            mode='historical',
+            start_month=start_month,
+            focus_year=focus_year
+        )
+
+        # Add the series to the plot
+        plotter.add_series(
+            df=df_filtered,
+            time_col="time",
+            var_col="cheze_vol",
+            legend_name="Volume m3",
+            freq=freq,
+            year_min=year_min_selected,
+            year_max=year_max_selected
         )
         
         plotter.add_line(
@@ -336,12 +380,12 @@ if data_lake_path and os.path.exists(data_lake_path):
     with tab1:
         # Create the TimeSeriesPlot_Plotly object with correct parameters
         plotter = TimeSeriesPlot_Plotly(
-            title="Chroniques",
             x_axis_title="Date",
-            y_axis_title="Value",
+            y_axis_title="Volume (m3)",
             x_range=(year_min_selected, year_max_selected),
             log_y=log_y,
-            mode='evolution'
+            mode='annual_cycle',
+            start_month=start_month
         )
 
         # Add the series to the plot
@@ -349,7 +393,7 @@ if data_lake_path and os.path.exists(data_lake_path):
             df=df_filtered,
             time_col="time",
             var_col="cheze_vol",
-            legend_name="Data",
+            legend_name="Volume m3 de la Cheze",
             freq=freq,
             year_min=year_min_selected,
             year_max=year_max_selected,
@@ -372,12 +416,12 @@ if data_lake_path and os.path.exists(data_lake_path):
     with tab2:
         # Create the TimeSeriesPlot_Plotly object with correct parameters
         plotter = TimeSeriesPlot_Plotly(
-            title="Chroniques",
             x_axis_title="Date",
-            y_axis_title="Value",
+            y_axis_title="Volume (m3)",
             x_range=(year_min_selected, year_max_selected),
             log_y=log_y,
-            mode='evolution'
+            mode='annual_cycle',
+            start_month=start_month
         )
 
         # Add the series to the plot
@@ -385,7 +429,7 @@ if data_lake_path and os.path.exists(data_lake_path):
             df=df_filtered,
             time_col="time",
             var_col="cheze_vol",
-            legend_name="Data",
+            legend_name="Volume m3 de la Cheze",
             freq=freq,
             year_min=year_min_selected,
             year_max=year_max_selected,
@@ -411,13 +455,13 @@ if data_lake_path and os.path.exists(data_lake_path):
 
     # Create the TimeSeriesPlot_Plotly object with correct parameters
     plotter = TimeSeriesPlot_Plotly(
-        title="Statistique",
         x_axis_title="Date",
-        y_axis_title="Value",
+        y_axis_title="Volume (m3)",
         x_range=(year_min_selected, year_max_selected),
         log_y=log_y,
-        mode='statistic',
-        focus_year=focus_year
+        mode='statistics',
+        focus_year=focus_year,
+        start_month=start_month
     )
 
     # Add the series to the plot
@@ -425,7 +469,7 @@ if data_lake_path and os.path.exists(data_lake_path):
         df=df_filtered,
         time_col="time",
         var_col="cheze_vol",
-        legend_name="Data",
+        legend_name="Volume m3 de la Cheze",
         freq=freq,
         year_min=year_min_selected,
         year_max=year_max_selected,

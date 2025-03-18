@@ -760,7 +760,7 @@ class TimeSeriesPlot_Plotly:
                                     y=df_shifted[self.var_col],
                                     mode='lines',
                                     line=dict(color='rgba(255, 165, 0, 0.5)', dash='dot', width=1),  # Orange transparent en pointillé
-                                    name=f'Année de référence {self.focus_year} projetée)',
+                                    name=f'Référence {self.focus_year}',
                                     showlegend=bool(year == unique_years[0]),  # Ne montrer qu'une seule fois dans la légende
                                     hovertext=f"Année projetée {year}",
                                 )
@@ -773,7 +773,7 @@ class TimeSeriesPlot_Plotly:
                                 y=df_focus[self.var_col],
                                 mode='lines',
                                 line=dict(color='rgb(255, 0, 0)', width=2),  # Rouge plus épais
-                                name=f'Année de référence {self.focus_year}',
+                                name=f'Référence {self.focus_year}',
                                 hovertemplate=(
                                     "Date : %{x|%d/%m/%Y}<br>" + f"{var_col} : " + "%{y:.2f}<extra></extra>"
                                 )
@@ -978,8 +978,8 @@ class TimeSeriesPlot_Plotly:
                 title=f"Légende :",
                 orientation='v',
                 yanchor='bottom',
-                y=0.25,
-                x=1.1,
+                y=0,
+                x=1.21,
                 xanchor='right',
                 bgcolor='rgba(255, 255, 255, 0.5)',
                 bordercolor='black',
