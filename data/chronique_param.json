@@ -5,5 +5,6 @@
     "freq": "W",
     "log_y": false,
     "focus_year": 2009,
-    "rolling_window": 10
+    "rolling_window": 10,
+    "start_month": 10
 }
