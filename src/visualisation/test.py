@@ -42,10 +42,10 @@ class TimeSeriesPlot_Plotly:
     """
 
     def __init__(self,
-                 title: str,
-                 x_axis_title: str,
-                 y_axis_title: str,
-                 x_range: tuple,
+                 title: str = None,
+                 x_axis_title: str = "Date",
+                 y_axis_title: str = "Valeur",
+                 x_range: tuple = None,
                  log_x: bool = False,
                  log_y: bool = False,
                  mode: str = 'historical',
@@ -58,13 +58,13 @@ class TimeSeriesPlot_Plotly:
         
         Parameters
         ----------
-        title : str
-            Title of the plot.
-        x_axis_title : str
-            Title for the X-axis.
-        y_axis_title : str
-            Title for the Y-axis.
-        x_range : tuple
+        title : str, optional
+            Title of the plot. If None, a title will be auto-generated.
+        x_axis_title : str, optional
+            Title for the X-axis. Default is "Date".
+        y_axis_title : str, optional
+            Title for the Y-axis. Default is "Valeur".
+        x_range : tuple, optional
             Tuple specifying the start and end year for the X-axis range (e.g., (2000, 2020)).
         log_x : bool, optional
             Whether to use a logarithmic scale for the X-axis. Default is False.
@@ -87,7 +87,6 @@ class TimeSeriesPlot_Plotly:
             Not applicable in 'historical' mode. Default is False.
         """
         
-        self.title = title if title else f"Time Series Plot"
         self.x_axis_title = x_axis_title
         self.y_axis_title = y_axis_title
         self.x_range = x_range
@@ -98,13 +97,15 @@ class TimeSeriesPlot_Plotly:
         self.start_month = start_month if start_month is not None and start_month > 1 else None
         self.cumul = cumul
         
+        self.title = title
+        
         if self.cumul and self.mode == 'historical':
             logging.warning("Cumulative option is not applicable in 'historical' mode. It will be ignored.")
             self.cumul = False      
 
         if self.mode == 'statistics' and self.focus_year is None:
             logging.warning("The 'statistics' mode requires a reference year (focus_year). The 'historicals' mode will be used instead.")
-            self.mode = 'historicals'
+            self.mode = 'historical'
 
         self.series_list = []
         self.line_list = []
@@ -152,12 +153,13 @@ class TimeSeriesPlot_Plotly:
         """
         self.freq = freq
         self.legend_name = legend_name
+        self.rolling_window = rolling_window
 
         df[time_col] = pd.to_datetime(df[time_col])
 
-        if self.mode == 'statistics' and rolling_window is not None:
+        if self.mode == 'statistics' and self.rolling_window is not None:
             logging.warning("The 'statistics' mode cannot be used with a rolling_window. The rolling_window will be ignored.")
-            rolling_window = None
+            self.rolling_window = None
 
         if year_min is not None:
             df = df[df[time_col].dt.year >= year_min]
@@ -288,9 +290,9 @@ class TimeSeriesPlot_Plotly:
                         
                     df.loc[year_mask, var_col] = df.loc[year_mask].sort_values(by=sort_col)[var_col].cumsum()
         
-        if rolling_window is not None:
+        if self.rolling_window is not None:
             unique_years = sorted(df['year'].unique())
-            max_start_year = unique_years[-rolling_window]
+            max_start_year = unique_years[-self.rolling_window]
 
             output_dfs = []
 
@@ -298,7 +300,7 @@ class TimeSeriesPlot_Plotly:
                 if start_year > max_start_year:
                     break
 
-                mask = (df['year'] >= start_year) & (df['year'] < start_year + rolling_window)
+                mask = (df['year'] >= start_year) & (df['year'] < start_year + self.rolling_window)
                 block_df = df[mask].copy()
 
                 if self.freq == 'D':
@@ -350,7 +352,7 @@ class TimeSeriesPlot_Plotly:
                 'var_col': y_data_name,
                 'legend_name': legend_name or str(var_col),
                 'freq': freq,
-                'rolling_window': rolling_window
+                'rolling_window': self.rolling_window
             })
 
         # Process data for annual_cycle mode
@@ -368,8 +370,8 @@ class TimeSeriesPlot_Plotly:
             for year in grouped['year'].unique():
                 year_data = grouped[grouped['year'] == year].copy()
 
-                if rolling_window is not None:
-                    legend_text = f'{year}-{year + rolling_window - 1}'
+                if self.rolling_window is not None:
+                    legend_text = f'{year}-{year + self.rolling_window - 1}'
                 else:
                     legend_text = f'Year {year}'
 
@@ -379,7 +381,7 @@ class TimeSeriesPlot_Plotly:
                     'var_col': y_data_name,
                     'legend_name': legend_text,
                     'freq': freq,
-                    'rolling_window': rolling_window,
+                    'rolling_window': self.rolling_window,
                     'is_annual_cycle': True
                 })
 
@@ -448,6 +450,10 @@ class TimeSeriesPlot_Plotly:
                 'rolling_window': None,
                 'is_statistics': True
             })
+        
+        # Générer un titre automatiquement si aucun titre personnalisé n'a été fourni
+        if self.title is None:
+            self.title = self._generate_auto_title()
 
     def generate_color_palette(self, num_colors: int) -> list:
         """
@@ -471,6 +477,65 @@ class TimeSeriesPlot_Plotly:
             f'rgb({int(c[0]*255)}, {int(c[1]*255)}, {int(c[2]*255)})'
             for c in colors
         ]
+
+    def _generate_auto_filename(self):
+
+        components = []
+        
+        components.append(self.mode)
+        
+        if self.focus_year is not None:
+            components.append(f"focus-({self.focus_year})")
+        
+        if self.freq is not None:
+            freq_names = {'D': 'daily', 'W': 'weekly', 'ME': 'monthly'}
+            components.append(freq_names.get(self.freq, self.freq))
+        
+        if self.rolling_window is not None:
+            components.append(f"roll-({self.rolling_window})")
+        
+        if self.cumul:
+            components.append("cumulative")
+        
+        if hasattr(self, 'var_col') and self.var_col:
+            var_name = self.var_col.replace(' ', '_').replace('/', '_')
+            components.append(var_name)
+        
+        filename = "_".join(components)
+        
+        return filename
+
+    def _generate_auto_title(self):
+
+        components = []
+
+        mode_names = {
+            'historical': 'Série chronologique',
+            'annual_cycle': 'Cycle annuel',
+            'statistics': 'Statistiques'
+        }
+        components.append(mode_names.get(self.mode, self.mode.capitalize()))
+        
+        if hasattr(self, 'legend_name') and self.legend_name:
+            components.append(f"de {self.legend_name}")
+        elif hasattr(self, 'var_col') and self.var_col:
+            components.append(f"de {self.var_col}")
+        
+        if self.x_range and len(self.x_range) == 2:
+            components.append(f"({self.x_range[0]}-{self.x_range[1]})")
+        
+        if self.focus_year is not None:
+            components.append(f"- Année de référence: {self.focus_year}")
+        
+        if self.cumul:
+            components.append("(Cumulatif)")
+        
+        if self.rolling_window is not None:
+            components.append(f"- Moyenne glissante de {self.rolling_window} ans")
+        
+        title = " ".join(components)
+        
+        return title
 
     def add_line(self,
                  orientation: str,
@@ -727,16 +792,8 @@ class TimeSeriesPlot_Plotly:
                     tickformat="%Y",
                 ),
                 hovermode='x unified',
-            )
-            
-            fig.update_layout(
-                # Configurer le mode de survol pour qu'il sélectionne le point le plus proche du curseur
-
-                
-                # Réduire la distance maximale à laquelle un point peut être sélectionné
                 hoverdistance=1,
             )
-
 
         # MODE = annual_cycle
         elif self.mode == 'annual_cycle':
@@ -962,27 +1019,42 @@ class TimeSeriesPlot_Plotly:
         else:
             fig.show()
 
-    def save(self, file_path: str, format: str = 'html', open_browser: bool = False):
+    def save(self, file_path: str = None, file_name: str = None, format: str = 'html', open_browser: bool = False):
         """
         Save the resulting figure to a file.
         
         Parameters
         ----------
-        file_path : str
-            File path to save the figure.
+        file_path : str, optional
+            Directory path to save the figure. If None, uses the current directory.
+        file_name : str, optional
+            Name of the file without extension. If None, a name will be auto-generated.
         format : str, optional
             Format for saving the figure ('html' or 'png'). Default is 'html'.
         open_browser : bool, optional
             Whether to open the figure in a web browser. Default is False.
         """
         fig = self.create_figure()
+
+        if file_path is None:
+            try:
+                file_path = os.path.join(root_dir, "output")
+                os.makedirs(file_path, exist_ok=True)
+            except:
+                file_path = os.getcwd()
+        
+        if file_name is None:
+            file_name = self._generate_auto_filename()
+        
+        full_path = os.path.join(file_path, f"{file_name}.{format}")
+        
         if format == 'html':
-            pio.write_html(fig, file_path, auto_open=open_browser)
+            pio.write_html(fig, full_path, auto_open=open_browser)
         elif format == 'png':
-            fig.write_image(fig, file_path)
+            fig.write_image(full_path)
         else:
             logging.warning(f"Unsupported format: {format}. Saving as HTML.")
-            pio.write_html(fig, file_path, auto_open=open_browser)
+            pio.write_html(fig, os.path.join(file_path, f"{file_name}.html"), auto_open=open_browser)
             
 #%%
 if __name__ == "__main__":
@@ -992,7 +1064,6 @@ if __name__ == "__main__":
     df["time"] = pd.to_datetime(df["time"], format="%d/%m/%Y")
         
     plot = TimeSeriesPlot_Plotly(
-        title="Volume de la Cheze (2004-2024) - annual_cycle (Cumul)",
         x_axis_title="Date",
         y_axis_title="Volume (m3)",
         x_range=(2004, 2004),
@@ -1023,5 +1094,5 @@ if __name__ == "__main__":
 
     plot.show(open_browser=True)
     
-    # plot.save(f"C:\\Users\\basti\\OneDrive\\PhD\\03_Meeting\\EBR\\2025-02-26\\graph\\{plot.title}.html", format="html", open_browser=False)
+    #plot.save(open_browser=False)
 # %%
