@@ -1,13 +1,13 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from st_pages import add_page_title
 
 # Configuration de la page
 st.set_page_config(page_title="Chargement des données", page_icon="📤", layout="wide")
 
-# Ajouter le titre de la page automatiquement
-add_page_title()
+# Titre de la page
+st.title("📤 Chargement des données")
+st.markdown("---")
 
 # -------------------------------------------------
 # Téléchargement de fichier
@@ -119,10 +119,17 @@ if uploaded_file is not None:
         st.metric("Valeur minimale", f"{df[volume_col].min():,.2f}")
         st.metric("Valeur maximale", f"{df[volume_col].max():,.2f}")
     
-    # Bouton pour aller à la page de visualisation
-    st.markdown("### Prêt à visualiser vos données ?")
-    if st.button("Aller à la page de visualisation", type="primary"):
-        st.switch_page("pages/2_📊_Chroniques.py")
+    # Boutons de navigation
+    st.markdown("### Navigation")
+    nav_col1, nav_col2 = st.columns(2)
+    
+    with nav_col1:
+        if st.button("🏠 Retour à l'accueil", use_container_width=True):
+            st.switch_page("Home.py")
+            
+    with nav_col2:
+        if st.button("📊 Aller à la visualisation", use_container_width=True, type="primary"):
+            st.switch_page("pages/2_📊_Chroniques.py")
 
 else:
     # Afficher un message si aucun fichier n'est téléchargé
@@ -142,12 +149,42 @@ else:
         - La colonne de volume doit contenir des valeurs numériques
         - Le séparateur peut être un point-virgule (;) ou une virgule (,)
         """)
+    
+    # Bouton de retour à l'accueil
+    if st.button("🏠 Retour à l'accueil", use_container_width=True):
+        st.switch_page("Home.py")
 
-# Masquer le menu et le pied de page Streamlit
-hide_streamlit_style = """
+# CSS pour améliorer l'apparence
+st.markdown("""
 <style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
+    /* Amélioration générale */
+    h1, h2, h3 {
+        color: #4682B4;
+    }
+    
+    /* Personnalisation des boutons */
+    .stButton button {
+        background-color: #4682B4;
+        color: white;
+        font-weight: bold;
+        border: none;
+        padding: 15px;
+        border-radius: 5px;
+    }
+    
+    .stButton button:hover {
+        background-color: #36648B;
+    }
+    
+    /* Masquer le menu et le footer */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Bordure autour des sections */
+    div[data-testid="stExpander"] {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
 </style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+""", unsafe_allow_html=True)

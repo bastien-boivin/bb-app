@@ -1,25 +1,16 @@
 import streamlit as st
-from st_pages import Page, show_pages, add_page_title
 
 # Configuration de la page
 st.set_page_config(page_title="Reservoir Analysis", page_icon="💧", layout="wide")
 
-# Ajout du titre de la page automatiquement
-add_page_title()
-
-# Définition de la structure de navigation
-show_pages(
-    [
-        Page("🏡_Home.py", "Accueil", "🏠"),
-        Page("pages/1_📤_Chargement.py", "Chargement des données", "📤"),
-        Page("pages/2_📊_Chroniques.py", "Visualisation", "📊"),
-    ]
-)
+# Titre de la page d'accueil
+st.title("📊 Reservoir Water Volume Analysis")
+st.markdown("---")
 
 # Contenu de la page d'accueil
-st.markdown("## 💧 Application d'analyse des réservoirs d'eau")
-
 st.markdown("""
+## 💧 Application d'analyse des réservoirs d'eau
+
 Cette application vous permet d'analyser et de visualiser les données de volume d'eau des réservoirs.
 
 ### Fonctionnalités principales :
@@ -39,11 +30,49 @@ Développé par le Département des Sciences Environnementales, Université de R
 # Affichage d'un exemple de visualisation
 st.image("https://plotly.com/~empet/15073.png", caption="Exemple de visualisation de séries temporelles", use_column_width=True)
 
-# Masquer le menu et le pied de page Streamlit
-hide_streamlit_style = """
+# Boutons de navigation
+st.markdown("### Navigation")
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("📤 Chargement des données", use_container_width=True):
+        st.switch_page("pages/1_📤_Chargement.py")
+
+with col2:
+    if st.button("📊 Visualisation", use_container_width=True):
+        st.switch_page("pages/2_📊_Chroniques.py")
+
+# CSS pour améliorer l'apparence
+st.markdown("""
 <style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
+    /* Amélioration générale */
+    h1, h2, h3 {
+        color: #4682B4;
+    }
+    
+    /* Personnalisation des boutons */
+    .stButton button {
+        background-color: #4682B4;
+        color: white;
+        font-weight: bold;
+        border: none;
+        padding: 15px;
+        border-radius: 5px;
+    }
+    
+    .stButton button:hover {
+        background-color: #36648B;
+    }
+    
+    /* Masquer le menu et le footer */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Bordure autour des sections */
+    div[data-testid="stExpander"] {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
 </style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
