@@ -3,7 +3,7 @@ import pandas as pd
 import io
 
 # Configuration de la page - DOIT ÊTRE LA PREMIÈRE COMMANDE STREAMLIT
-st.set_page_config(page_title="Visualisation", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Visualisation", page_icon="📊", layout="centered")
 
 # Titre de la page
 st.title("📊 Visualisation des chroniques")
@@ -53,6 +53,7 @@ time_col = params['data_info']['time_col']
 volume_col = params['data_info']['volume_col']
 year_min = params['visualization']['year_min']
 year_max = params['visualization']['year_max']
+custom_max_value = params['data_info'].get('custom_max_value')  # Peut être None
 
 # ---------------------------------------------------
 # Interface utilisateur pour les paramètres dans la sidebar
@@ -147,6 +148,10 @@ st.write(f"Période: {year_min} - {year_max}")
 df["year"] = df[time_col].dt.year
 df_filtered = df[df["year"].between(year_min, year_max)]
 
+# Déterminer la valeur maximale pour la ligne de référence
+max_volume = custom_max_value if custom_max_value is not None else df_filtered[volume_col].max()
+max_volume_label = "Volume Maximal (personnalisé)" if custom_max_value is not None else "Volume Maximal"
+
 # ---------------------------------------------------
 # Chronique de Volume - Standard
 # ---------------------------------------------------
@@ -175,15 +180,14 @@ with tab1:
         year_max=year_max,
     )
     
-    # Déterminer la valeur maximale pour la ligne de référence
-    max_volume = df_filtered[volume_col].max()
+    # Ligne de référence
     plotter.add_line(
         orientation='h',
         position=max_volume,
         line_dash='dash',
         col='all',
         color='red',
-        label=f'Volume Maximal {max_volume:,.0f}'
+        label=f'{max_volume_label} {max_volume:,.0f}'
     )
 
     # Affichage du graphique
@@ -220,7 +224,7 @@ with tab2:
         line_dash='dash',
         col='all',
         color='red',
-        label=f'Volume Maximal {max_volume:,.0f}'
+        label=f'{max_volume_label} {max_volume:,.0f}'
     )
 
     # Affichage du graphique
@@ -257,7 +261,7 @@ with tab3:
         line_dash='dash',
         col='all',
         color='red',
-        label=f'Volume Maximal {max_volume:,.0f}'
+        label=f'{max_volume_label} {max_volume:,.0f}'
     )
 
     # Affichage du graphique
@@ -299,7 +303,7 @@ with tab1:
         line_dash='dash',
         col='all',
         color='red',
-        label=f'Volume Maximal {max_volume:,.0f}'
+        label=f'{max_volume_label} {max_volume:,.0f}'
     )
 
     # Affichage du graphique
@@ -336,7 +340,7 @@ with tab2:
         line_dash='dash',
         col='all',
         color='red',
-        label=f'Volume Maximal {max_volume:,.0f}'
+        label=f'{max_volume_label} {max_volume:,.0f}'
     )
 
     # Affichage du graphique
@@ -377,7 +381,7 @@ plotter.add_line(
     line_dash='dash',
     col='all',
     color='red',
-    label=f'Volume Maximal {max_volume:,.0f}'
+    label=f'{max_volume_label} {max_volume:,.0f}'
 )
 
 # Affichage du graphique

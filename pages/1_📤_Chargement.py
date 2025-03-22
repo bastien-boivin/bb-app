@@ -74,6 +74,29 @@ if uploaded_file is not None:
             st.error(f"Erreur lors de la conversion des dates: {e}")
             st.info("Veuillez sélectionner un autre format de date ou vérifier vos données.")
             st.stop()
+
+    # Option pour définir une valeur maximale personnalisée
+    st.header("4️⃣ Configuration des limites")
+    
+    # Calculer valeur maximale des données
+    max_data_value = df[volume_col].max()
+    
+    # Option pour définir une valeur maximale personnalisée
+    use_custom_max = st.checkbox("Définir une valeur maximale personnalisée", value=False)
+    
+    if use_custom_max:
+        custom_max_value = st.number_input(
+            "Valeur maximale personnalisée", 
+            min_value=float(max_data_value * 0.5),  # Valeur minimale raisonnable
+            max_value=float(max_data_value * 2),    # Valeur maximale raisonnable
+            value=float(max_data_value),            # Valeur par défaut
+            step=1000.0,                            # Incrément
+            format="%.1f"                           # Format d'affichage
+        )
+        st.info(f"Cette valeur sera utilisée comme ligne de référence du volume maximal sur tous les graphiques.")
+    else:
+        custom_max_value = None
+        st.info(f"La valeur maximale trouvée dans les données ({max_data_value:,.1f}) sera utilisée comme référence.")
     
     # Déterminer l'année min et max des données
     min_year = df[time_col].dt.year.min()
@@ -85,6 +108,7 @@ if uploaded_file is not None:
         "data_info": {
             "time_col": time_col,
             "volume_col": volume_col,
+            "custom_max_value": custom_max_value  # Nouvelle valeur maximale personnalisée (peut être None)
         },
         "visualization": {
             "year_min": int(min_year),
@@ -108,7 +132,7 @@ if uploaded_file is not None:
     st.success("✅ Données chargées avec succès ! Vous pouvez maintenant accéder à la page Visualisation pour explorer vos données.")
     
     # Présentation des données chargées
-    st.header("4️⃣ Résumé des données")
+    st.header("5️⃣ Résumé des données")
     col1, col2 = st.columns(2)
     
     with col1:
@@ -117,7 +141,10 @@ if uploaded_file is not None:
     
     with col2:
         st.metric("Valeur minimale", f"{df[volume_col].min():,.2f}")
-        st.metric("Valeur maximale", f"{df[volume_col].max():,.2f}")
+        if use_custom_max:
+            st.metric("Valeur maximale (personnalisée)", f"{custom_max_value:,.2f}")
+        else:
+            st.metric("Valeur maximale", f"{max_data_value:,.2f}")
 
 else:
     # Afficher un message si aucun fichier n'est téléchargé
