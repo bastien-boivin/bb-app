@@ -21,14 +21,10 @@ def check_data_availability():
     """Vérifie si les données sont disponibles dans la session"""
     if 'uploaded_data' not in st.session_state:
         st.warning("Aucune donnée n'a été téléchargée. Veuillez retourner à la page Chargement pour télécharger vos données.")
-        if st.button("📤 Aller à la page Chargement", use_container_width=True):
-            st.switch_page("pages/1_📤_Chargement.py")
         st.stop()
     
     if 'params' not in st.session_state:
         st.warning("Aucun paramètre n'a été configuré. Veuillez retourner à la page Chargement pour configurer vos paramètres.")
-        if st.button("📤 Aller à la page Chargement", use_container_width=True):
-            st.switch_page("pages/1_📤_Chargement.py")
         st.stop()
 
 def load_data():
@@ -125,16 +121,6 @@ with st.sidebar:
             "start_month": 1
         }
         st.rerun()
-    
-    # Navigation
-    st.markdown("---")
-    st.subheader("Navigation")
-    
-    if st.button("🏠 Accueil", use_container_width=True):
-        st.switch_page("Home.py")
-        
-    if st.button("📤 Chargement", use_container_width=True):
-        st.switch_page("pages/1_📤_Chargement.py")
     
     # Mise à jour des valeurs dans session_state
     st.session_state['params']['visualization']['year_min'] = year_range[0]
@@ -413,38 +399,3 @@ with st.expander("💡 Conseils d'utilisation"):
     
     Pour télécharger un graphique, cliquez sur l'icône d'appareil photo qui apparaît en haut à droite de chaque graphique lorsque vous passez votre souris dessus.
     """)
-
-# CSS pour améliorer l'apparence
-st.markdown("""
-<style>
-    /* Amélioration générale */
-    h1, h2, h3 {
-        color: #4682B4;
-    }
-    
-    /* Personnalisation des boutons */
-    .stButton button {
-        background-color: #4682B4;
-        color: white;
-        font-weight: bold;
-        border: none;
-        padding: 15px;
-        border-radius: 5px;
-    }
-    
-    .stButton button:hover {
-        background-color: #36648B;
-    }
-    
-    /* Masquer le menu et le footer */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    
-    /* Bordure autour des sections */
-    div[data-testid="stExpander"] {
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        margin-bottom: 10px;
-    }
-</style>
-""", unsafe_allow_html=True)
