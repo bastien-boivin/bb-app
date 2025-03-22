@@ -1,11 +1,11 @@
-2025-03-18 13:38:52,741 [DEBUG] [root] [path:84] Appel de get_selected_profile
-2025-03-18 13:38:52,742 [INFO] [root] [path:65] Fichier de configuration chargé avec succès.
-2025-03-18 13:38:52,743 [INFO] [root] [path:65] Fichier de configuration chargé avec succès.
-2025-03-18 13:38:52,744 [DEBUG] [root] [path:89] Appel de set_selected_profile avec cheze
-2025-03-18 13:38:52,745 [INFO] [root] [path:65] Fichier de configuration chargé avec succès.
-2025-03-18 13:38:52,746 [INFO] [root] [path:79] Configuration sauvegardée dans C:\Users\basti\Documents\ebr-visualisation\data\paths.json.
-2025-03-18 13:38:52,748 [INFO] [root] [path:65] Fichier de configuration chargé avec succès.
-2025-03-18 13:38:52,841 [DEBUG] [root] [plotly_chroniques:198] time         0
+2025-03-21 23:24:42,921 [DEBUG] [root] [path:84] Appel de get_selected_profile
+2025-03-21 23:24:42,922 [INFO] [root] [path:65] Fichier de configuration chargé avec succès.
+2025-03-21 23:24:42,923 [INFO] [root] [path:65] Fichier de configuration chargé avec succès.
+2025-03-21 23:24:42,924 [DEBUG] [root] [path:89] Appel de set_selected_profile avec cheze
+2025-03-21 23:24:42,925 [INFO] [root] [path:65] Fichier de configuration chargé avec succès.
+2025-03-21 23:24:42,926 [INFO] [root] [path:79] Configuration sauvegardée dans C:\Users\basti\Documents\ebr-visualisation\data\paths.json.
+2025-03-21 23:24:42,931 [INFO] [root] [path:65] Fichier de configuration chargé avec succès.
+2025-03-21 23:24:43,059 [DEBUG] [root] [plotly_chroniques:245] time         0
 cheze_lvl    0
 cheze_vol    0
 canut        0
@@ -14,7 +14,7 @@ usine        0
 resti        0
 year         0
 dtype: int64
-2025-03-18 13:38:52,984 [DEBUG] [root] [plotly_chroniques:198] time         0
+2025-03-21 23:24:43,114 [DEBUG] [root] [plotly_chroniques:245] time         0
 cheze_lvl    0
 cheze_vol    0
 canut        0
@@ -23,7 +23,7 @@ usine        0
 resti        0
 year         0
 dtype: int64
-2025-03-18 13:38:53,047 [DEBUG] [root] [plotly_chroniques:198] time         0
+2025-03-21 23:24:43,207 [DEBUG] [root] [plotly_chroniques:245] time         0
 cheze_lvl    0
 cheze_vol    0
 canut        0
@@ -32,7 +32,7 @@ usine        0
 resti        0
 year         0
 dtype: int64
-2025-03-18 13:38:53,121 [DEBUG] [root] [plotly_chroniques:198] time         0
+2025-03-21 23:24:43,286 [DEBUG] [root] [plotly_chroniques:245] time         0
 cheze_lvl    0
 cheze_vol    0
 canut        0
@@ -41,7 +41,7 @@ usine        0
 resti        0
 year         0
 dtype: int64
-2025-03-18 13:38:53,184 [DEBUG] [root] [plotly_chroniques:198] time         0
+2025-03-21 23:24:43,368 [DEBUG] [root] [plotly_chroniques:245] time         0
 cheze_lvl    0
 cheze_vol    0
 canut        0
@@ -50,7 +50,7 @@ usine        0
 resti        0
 year         0
 dtype: int64
-2025-03-18 13:38:53,254 [DEBUG] [root] [plotly_chroniques:198] time         0
+2025-03-21 23:24:43,512 [DEBUG] [root] [plotly_chroniques:245] time         0
 cheze_lvl    0
 cheze_vol    0
 canut        0
@@ -59,64 +59,24 @@ usine        0
 resti        0
 year         0
 dtype: int64
-2025-03-18 13:38:53,276 [DEBUG] [root] [plotly_chroniques:431] 
+2025-03-21 23:24:43,546 [DEBUG] [root] [plotly_chroniques:478] 
 Focus data after groupby:
-2025-03-18 13:38:53,276 [DEBUG] [root] [plotly_chroniques:432]    week_num         focus       time
-0         1  1.244813e+07 2008-10-01
-1         2  1.227415e+07 2008-10-08
-2         3  1.205436e+07 2008-10-15
-3         4  1.201560e+07 2008-10-22
-4         5  1.204620e+07 2008-10-29
-2025-03-18 13:38:53,285 [DEBUG] [root] [plotly_chroniques:442] 0     1.244813e+07
-1     1.227415e+07
-2     1.205436e+07
-3     1.201560e+07
-4     1.204620e+07
-5     1.208292e+07
-6     1.212984e+07
-7     1.204212e+07
-8     1.214193e+07
-9     1.223847e+07
-10    1.253529e+07
-11    1.325849e+07
-12    1.321609e+07
-13    1.319489e+07
-14    1.330090e+07
-15    1.402446e+07
-16    1.458651e+07
-17    1.444052e+07
-18    1.449626e+07
-19    1.445910e+07
-20    1.440071e+07
-21    1.435293e+07
-22    1.441133e+07
-23    1.432639e+07
-24    1.420429e+07
-25    1.408750e+07
-26    1.402380e+07
-27    1.394152e+07
-28    1.394152e+07
-29    1.388578e+07
-30    1.391232e+07
-31    1.389109e+07
-32    1.382858e+07
-33    1.379089e+07
-34    1.371315e+07
-35    1.360714e+07
-36    1.357887e+07
-37    1.346109e+07
-38    1.335272e+07
-39    1.336215e+07
-40    1.330325e+07
-41    1.320667e+07
-42    1.304648e+07
-43    1.286273e+07
-44    1.277793e+07
-45    1.266485e+07
-46    1.259889e+07
-47    1.247640e+07
-48    1.221479e+07
-49    1.194624e+07
-50    1.165452e+07
-51    1.135898e+07
+2025-03-21 23:24:43,547 [DEBUG] [root] [plotly_chroniques:479]    month_num         focus       time
+0          1  1.051768e+07 2016-10-01
+1          2  9.509509e+06 2016-11-01
+2          3  8.760947e+06 2016-12-01
+3          4  7.756832e+06 2017-01-01
+4          5  7.916479e+06 2017-02-01
+2025-03-21 23:24:43,560 [DEBUG] [root] [plotly_chroniques:489] 0     1.051768e+07
+1     9.509509e+06
+2     8.760947e+06
+3     7.756832e+06
+4     7.916479e+06
+5     9.848686e+06
+6     1.106754e+07
+7     1.094940e+07
+8     1.072555e+07
+9     9.922425e+06
+10    9.287485e+06
+11    8.257555e+06
 Name: focus, dtype: float64
