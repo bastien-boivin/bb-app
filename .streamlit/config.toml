@@ -1,8 +1,12 @@
-[client]
-showErrorDetails = "none"
-
 [theme]
-primaryColor = "#E694FF"
-backgroundColor = "#00172B"
-secondaryBackgroundColor = "#0083B8"
-textColor = "#FFFFFF"
+primaryColor = "#4682B4"  # SteelBlue
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F8FF"  # AliceBlue
+textColor = "#262730"
+font = "sans serif"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

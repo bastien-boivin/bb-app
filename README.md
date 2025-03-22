@@ -1,67 +1,56 @@
-# Reservoir Water Volume Analysis
+# Notes pour le déploiement sur Streamlit Cloud
 
-## Description
-Application Streamlit pour l'analyse et la visualisation des données de volume d'eau de réservoirs. Cette version est spécialement conçue pour un déploiement web sur Streamlit Cloud.
+## Configuration de redirection
 
-## Fonctionnalités
+J'ai simplifié `main.py` pour qu'il redirige automatiquement vers la page Home. Cela permet de démarrer directement sur la page d'accueil avec le téléchargement des fichiers.
 
-- Upload de fichiers CSV contenant des données de chroniques
-- Sélection flexible des colonnes de temps et de données
-- Visualisation interactive de chroniques avec Plotly
-- Plusieurs modes de visualisation :
-  - Séries temporelles historiques
-  - Cycle annuel
-  - Analyse statistique
-- Options de personnalisation :
-  - Échelle logarithmique
-  - Fenêtre glissante
-  - Année de référence
-  - Fréquence (journalière, hebdomadaire, mensuelle)
-  - Mois de début pour le cycle annuel
+## Structure des dossiers pour Streamlit Cloud
 
-## Installation locale
+Pour déployer sur Streamlit Cloud, assurez-vous que la structure de dossiers est la suivante :
 
-1. Clonez ce dépôt :
-```bash
-git clone https://github.com/votreusername/reservoir-analysis.git
-cd reservoir-analysis
+```
+répertoire_projet/
+│
+├── main.py                    # Redirection vers Home
+│
+├── pages/                     # Système natif de multi-pages Streamlit
+│   ├── 1_🏡_Home.py           # Page d'accueil simplifiée
+│   └── 2_📊_Chroniques.py     # Page de visualisation avec tous les paramètres
+│
+├── visualisation/             # Votre code d'origine pour les graphiques
+│   └── plotly_chroniques.py   # Classe TimeSeriesPlot_Plotly sans modification
+│
+├── assets/                    # Ressources statiques
+│   └── images/
+│       └── Logo_Universite_Rennes.png
+│
+└── requirements.txt           # Dépendances de l'application
 ```
 
-2. Installez les dépendances :
-```bash
-pip install -r requirements.txt
+## Installation sur Streamlit Cloud
+
+1. Créez un dépôt GitHub avec cette structure
+2. Connectez-vous à [Streamlit Cloud](https://share.streamlit.io/)
+3. Créez une nouvelle application en pointant vers votre dépôt GitHub
+4. Sélectionnez `main.py` comme point d'entrée
+
+## Modification de requirements.txt
+
+Assurez-vous que requirements.txt contient toutes les dépendances nécessaires :
+
+```
+streamlit>=1.31.0
+pandas>=2.0.0
+numpy>=1.24.0
+plotly>=5.15.0
+matplotlib>=3.7.0
 ```
 
-3. Lancez l'application :
-```bash
-streamlit run main.py
-```
+## Gestion des données
 
-## Déploiement sur Streamlit Cloud
+Maintenant que l'application est configurée pour le web :
+- Les utilisateurs peuvent télécharger leur propre fichier CSV depuis leur ordinateur
+- Les paramètres de configuration sont tous dans la sidebar de la page Chroniques
+- Aucune dépendance aux fichiers de configuration JSON ou aux chemins locaux
 
-1. Créez un compte sur [Streamlit Cloud](https://share.streamlit.io/) si ce n'est pas déjà fait
-2. Connectez votre compte GitHub
-3. Créez un nouveau déploiement en sélectionnant ce dépôt
-4. Configurez le point d'entrée sur `main.py`
-
-## Format de données attendu
-
-L'application attend un fichier CSV avec au minimum :
-- Une colonne de dates (format flexible)
-- Une colonne de valeurs numériques (volumes)
-
-Exemple :
-```
-time;cheze_vol
-01/01/2020;12500000
-02/01/2020;12700000
-03/01/2020;12900000
-```
-
-## Licence
-
-[MIT License](LICENSE)
-
-## Contact
-
-Pour toute question ou suggestion, veuillez contacter bastien.boivin@univ-rennes.fr
+Cette approche facilitera grandement le déploiement et l'utilisation par d'autres personnes.

@@ -3,7 +3,7 @@ import pandas as pd
 import io
 
 # Configuration de la page - DOIT ÊTRE LA PREMIÈRE COMMANDE STREAMLIT
-st.set_page_config(page_title="Chroniques", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Chroniques", page_icon="📊", layout="centered")
 
 # ---------------------------------------------------
 # Import de la classe TimeSeriesPlot_Plotly
@@ -53,43 +53,67 @@ time_col = params['data_info']['time_col']
 volume_col = params['data_info']['volume_col']
 year_min = params['visualization']['year_min']
 year_max = params['visualization']['year_max']
-freq = params['visualization']['freq']
-log_y = params['visualization']['log_y']
-focus_year = params['visualization']['focus_year']
-rolling_window = params['visualization']['rolling_window']
-start_month = params['visualization']['start_month']
 
 # ---------------------------------------------------
 # Titre et description
 # ---------------------------------------------------
-st.title("📊 Chroniques")
-st.write(f"Visualisation des chroniques de {volume_col} sur la période {year_min}-{year_max}")
+st.title("📊 Chroniques de Volumes")
+st.write(f"Visualisation des chroniques de **{volume_col}** sur la période disponible ({year_min}-{year_max})")
 
 # ---------------------------------------------------
-# Filtrage des données
-# ---------------------------------------------------
-df["year"] = df[time_col].dt.year
-df_filtered = df[df["year"].between(year_min, year_max)]
-
-# ---------------------------------------------------
-# Interface utilisateur pour les paramètres
+# Interface utilisateur pour les paramètres dans la sidebar
 # ---------------------------------------------------
 with st.sidebar:
-    st.header("Paramètres")
+    st.header("Paramètres de visualisation")
     
-    # Mise à jour des paramètres
-    log_y = st.checkbox("Échelle logarithmique", value=log_y)
-    freq = st.selectbox("Fréquence", ["D", "W", "ME"], index=["D", "W", "ME"].index(freq))
-    focus_year = st.slider("Année de référence", year_min, year_max, focus_year)
-    rolling_window = st.slider("Fenêtre glissante", 2, 10, rolling_window)
-    start_month = st.slider("Mois de début", 1, 12, start_month)
+    # Section 1: Paramètres de plage et de fréquence
+    st.subheader("Données")
     
-    # Mise à jour des valeurs dans session_state
-    st.session_state['params']['visualization']['log_y'] = log_y
-    st.session_state['params']['visualization']['freq'] = freq
-    st.session_state['params']['visualization']['focus_year'] = focus_year
-    st.session_state['params']['visualization']['rolling_window'] = rolling_window
-    st.session_state['params']['visualization']['start_month'] = start_month
+    year_range = st.slider(
+        "Plage d'années",
+        min_value=int(year_min),
+        max_value=int(year_max),
+        value=(int(year_min), int(year_max))
+    )
+    
+    freq = st.selectbox(
+        "Fréquence d'échantillonnage",
+        options=["D", "W", "ME"],
+        index=0,
+        help="D: Journalier, W: Hebdomadaire, ME: Fin de mois"
+    )
+    
+    # Section 2: Paramètres d'affichage
+    st.subheader("Affichage")
+    
+    log_y = st.checkbox("Échelle logarithmique (log_y)", value=False)
+    
+    start_month = st.slider(
+        "Mois de début de cycle",
+        min_value=1,
+        max_value=12,
+        value=1,
+        help="Définit le mois de début pour le cycle annuel"
+    )
+    
+    # Section 3: Paramètres d'analyse
+    st.subheader("Analyse")
+    
+    focus_year = st.slider(
+        "Année de référence",
+        min_value=int(year_min),
+        max_value=int(year_max),
+        value=int(year_max-1),
+        help="Année mise en évidence dans les analyses statistiques et comparatives"
+    )
+    
+    rolling_window = st.slider(
+        "Fenêtre glissante (années)",
+        min_value=2,
+        max_value=10,
+        value=5,
+        help="Nombre d'années utilisées pour le calcul de la moyenne mobile"
+    )
     
     # Bouton pour réinitialiser les paramètres
     if st.button("Réinitialiser les paramètres"):
@@ -103,10 +127,31 @@ with st.sidebar:
             "start_month": 1
         }
         st.rerun()
+    
+    # Mise à jour des valeurs dans session_state
+    st.session_state['params']['visualization']['year_min'] = year_range[0]
+    st.session_state['params']['visualization']['year_max'] = year_range[1]
+    st.session_state['params']['visualization']['freq'] = freq
+    st.session_state['params']['visualization']['log_y'] = log_y
+    st.session_state['params']['visualization']['focus_year'] = focus_year
+    st.session_state['params']['visualization']['rolling_window'] = rolling_window
+    st.session_state['params']['visualization']['start_month'] = start_month
+
+# ---------------------------------------------------
+# Mise à jour des paramètres pour cette session
+# ---------------------------------------------------
+year_min, year_max = year_range
+
+# ---------------------------------------------------
+# Filtrage des données
+# ---------------------------------------------------
+df["year"] = df[time_col].dt.year
+df_filtered = df[df["year"].between(year_min, year_max)]
 
 # ---------------------------------------------------
 # Chronique de Volume - Standard
 # ---------------------------------------------------
+st.header("Série temporelle chronologique")
 tab1, tab2, tab3 = st.tabs(["Standard", "Moyenne glissante", "Comparaison"])
 
 with tab1:
@@ -223,7 +268,7 @@ with tab3:
 # ---------------------------------------------------
 # Évolution du volume (cycle annuel)
 # ---------------------------------------------------
-st.header("Évolution du volume (cycle annuel)")
+st.header("Cycle annuel")
 tab1, tab2 = st.tabs(["Standard", "Moyenne glissante"])
 
 with tab1:
@@ -302,7 +347,7 @@ with tab2:
 # ---------------------------------------------------
 # Statistiques
 # ---------------------------------------------------
-st.header("Statistiques")
+st.header("Analyse statistique")
 
 # Création du graphique statistique
 plotter = TimeSeriesPlot_Plotly(

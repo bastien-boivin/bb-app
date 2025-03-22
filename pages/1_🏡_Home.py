@@ -8,7 +8,7 @@ from datetime import datetime
 st.set_page_config(page_title="Accueil", page_icon="🏠", layout="wide")
 
 # -------------------------------------------------
-# Titre de la page
+# Titre de la page (sans logo qui cause une erreur)
 # -------------------------------------------------
 st.title("📊 Reservoir Water Volume Analysis")
 st.markdown("---")
@@ -25,8 +25,7 @@ with st.expander("📌 Comment utiliser cette application", expanded=True):
 
     1. **Téléchargez votre fichier CSV** contenant les données de chroniques
     2. **Sélectionnez les colonnes** pour le temps et les données de volume
-    3. **Configurez les paramètres** de visualisation selon vos besoins
-    4. Accédez à la page **Chroniques** pour visualiser les graphiques
+    3. Accédez à la page **Chroniques** pour visualiser les graphiques et ajuster les paramètres d'affichage
 
     Le format attendu du CSV est un fichier avec une colonne de date et une colonne de volume.
     """)
@@ -97,68 +96,25 @@ if uploaded_file is not None:
             st.info("Veuillez sélectionner un autre format de date ou vérifier vos données.")
             st.stop()
     
-    # Configuration des paramètres de visualisation
-    st.header("4️⃣ Configuration des paramètres")
-    
     # Déterminer l'année min et max des données
     min_year = df[time_col].dt.year.min()
     max_year = df[time_col].dt.year.max()
     
-    col1, col2 = st.columns(2)
-    with col1:
-        # Paramètres pour la visualisation
-        year_range = st.slider(
-            "Plage d'années",
-            min_value=int(min_year),
-            max_value=int(max_year),
-            value=(int(min_year), int(max_year))
-        )
-        
-        freq = st.selectbox(
-            "Fréquence",
-            options=["D", "W", "ME"],
-            index=0,
-            help="D: Journalier, W: Hebdomadaire, ME: Fin de mois"
-        )
-        
-        log_y = st.checkbox("Échelle logarithmique (log_y)", value=False)
-    
-    with col2:
-        focus_year = st.slider(
-            "Année de référence",
-            min_value=int(min_year),
-            max_value=int(max_year),
-            value=int(max_year-1)
-        )
-        
-        rolling_window = st.slider(
-            "Fenêtre glissante",
-            min_value=2,
-            max_value=10,
-            value=5
-        )
-        
-        start_month = st.slider(
-            "Mois de début",
-            min_value=1,
-            max_value=12,
-            value=1
-        )
-    
-    # Création du dictionnaire de paramètres
+    # Création du dictionnaire de paramètres de base
+    # Les paramètres de visualisation seront définis dans la page Chroniques
     params = {
         "data_info": {
             "time_col": time_col,
             "volume_col": volume_col,
         },
         "visualization": {
-            "year_min": year_range[0],
-            "year_max": year_range[1],
-            "freq": freq,
-            "log_y": log_y,
-            "focus_year": focus_year,
-            "rolling_window": rolling_window,
-            "start_month": start_month
+            "year_min": int(min_year),
+            "year_max": int(max_year),
+            "freq": "D",
+            "log_y": False,
+            "focus_year": int(max_year-1),
+            "rolling_window": 5,
+            "start_month": 1
         }
     }
     
@@ -170,7 +126,7 @@ if uploaded_file is not None:
     st.session_state['uploaded_data'] = csv_data
     
     # Message de confirmation
-    st.success("✅ Configuration terminée ! Vous pouvez maintenant accéder à la page Chroniques pour visualiser vos données.")
+    st.success("✅ Données chargées avec succès ! Vous pouvez maintenant accéder à la page Chroniques pour visualiser vos données.")
     
     # Bouton pour aller à la page Chroniques
     if st.button("Aller à la page Chroniques"):
