@@ -1,12 +1,8 @@
-import os
-import sys
-import logging
-import json
-import pandas as pd
 import streamlit as st
+import pandas as pd
 import io
 
-# Configuration de la page Streamlit
+# Configuration de la page - DOIT ÊTRE LA PREMIÈRE COMMANDE STREAMLIT
 st.set_page_config(page_title="Chroniques", page_icon="📊", layout="wide")
 
 # ---------------------------------------------------

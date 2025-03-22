@@ -19,9 +19,6 @@ if cwd != root_dir:
 # -----------------------------------------------------
 # Module Imports
 # -----------------------------------------------------
-import src
-import importlib
-importlib.reload(src)
 
 class TimeSeriesPlot_Plotly:
     """

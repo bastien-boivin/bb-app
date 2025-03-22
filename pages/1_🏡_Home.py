@@ -1,13 +1,9 @@
-import os
-import sys
-import logging
 import streamlit as st
 import pandas as pd
-import json
 from datetime import datetime
 
 # -------------------------------------------------
-# Configuration de la page
+# Configuration de la page - DOIT ÊTRE LA PREMIÈRE COMMANDE STREAMLIT
 # -------------------------------------------------
 st.set_page_config(page_title="Accueil", page_icon="🏠", layout="wide")
 
