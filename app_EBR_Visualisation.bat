@@ -6,7 +6,7 @@ REM Nom de votre environnement Conda
 set ENVNAME=EBR_Visualization
 
 REM Chemin vers votre script Python
-set SCRIPTPATH=C:\Users\basti\Documents\ebr-visualisation\main.py
+set SCRIPTPATH=C:\Users\basti\Documents\ebr-visualisation\🏡_Home.py
 
 REM Activer l'environnement Conda
 call %CONDAPATH%\Scripts\activate.bat %CONDAPATH%

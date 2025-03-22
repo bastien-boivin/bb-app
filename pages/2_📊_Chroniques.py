@@ -1,9 +1,13 @@
 import streamlit as st
 import pandas as pd
 import io
+from st_pages import add_page_title
 
 # Configuration de la page - DOIT ÊTRE LA PREMIÈRE COMMANDE STREAMLIT
-st.set_page_config(page_title="Chroniques", page_icon="📊", layout="centered")
+st.set_page_config(page_title="Visualisation", page_icon="📊", layout="wide")
+
+# Ajouter le titre de la page automatiquement
+add_page_title()
 
 # ---------------------------------------------------
 # Import de la classe TimeSeriesPlot_Plotly
@@ -16,15 +20,15 @@ from visualisation.plotly_chroniques import TimeSeriesPlot_Plotly
 def check_data_availability():
     """Vérifie si les données sont disponibles dans la session"""
     if 'uploaded_data' not in st.session_state:
-        st.warning("Aucune donnée n'a été téléchargée. Veuillez retourner à la page d'accueil pour télécharger vos données.")
-        if st.button("Retour à l'accueil"):
-            st.switch_page("pages/1_🏡_Home.py")
+        st.warning("Aucune donnée n'a été téléchargée. Veuillez retourner à la page Chargement pour télécharger vos données.")
+        if st.button("Aller à la page Chargement"):
+            st.switch_page("pages/1_📤_Chargement.py")
         st.stop()
     
     if 'params' not in st.session_state:
-        st.warning("Aucun paramètre n'a été configuré. Veuillez retourner à la page d'accueil pour configurer vos paramètres.")
-        if st.button("Retour à l'accueil"):
-            st.switch_page("pages/1_🏡_Home.py")
+        st.warning("Aucun paramètre n'a été configuré. Veuillez retourner à la page Chargement pour configurer vos paramètres.")
+        if st.button("Aller à la page Chargement"):
+            st.switch_page("pages/1_📤_Chargement.py")
         st.stop()
 
 def load_data():
@@ -53,12 +57,6 @@ time_col = params['data_info']['time_col']
 volume_col = params['data_info']['volume_col']
 year_min = params['visualization']['year_min']
 year_max = params['visualization']['year_max']
-
-# ---------------------------------------------------
-# Titre et description
-# ---------------------------------------------------
-st.title("📊 Chroniques de Volumes")
-st.write(f"Visualisation des chroniques de **{volume_col}** sur la période disponible ({year_min}-{year_max})")
 
 # ---------------------------------------------------
 # Interface utilisateur pour les paramètres dans la sidebar
@@ -385,8 +383,11 @@ plotter.add_line(
 plotter.fig = plotter.create_figure()
 st.plotly_chart(plotter.fig, theme="streamlit", use_container_width=True)
 
-# ---------------------------------------------------
-# Téléchargement des graphiques
-# ---------------------------------------------------
-st.header("Téléchargement")
-st.info("Pour télécharger un graphique, cliquez sur l'icône d'appareil photo dans la barre d'outils du graphique.")
+# Masquer le menu et le pied de page Streamlit
+hide_streamlit_style = """
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)

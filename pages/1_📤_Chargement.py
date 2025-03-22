@@ -1,34 +1,13 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from st_pages import add_page_title
 
-# -------------------------------------------------
-# Configuration de la page - DOIT ÊTRE LA PREMIÈRE COMMANDE STREAMLIT
-# -------------------------------------------------
-st.set_page_config(page_title="Accueil", page_icon="🏠", layout="wide")
+# Configuration de la page
+st.set_page_config(page_title="Chargement des données", page_icon="📤", layout="wide")
 
-# -------------------------------------------------
-# Titre de la page (sans logo qui cause une erreur)
-# -------------------------------------------------
-st.title("📊 Reservoir Water Volume Analysis")
-st.markdown("---")
-
-# -------------------------------------------------
-# Instructions d'utilisation
-# -------------------------------------------------
-with st.expander("📌 Comment utiliser cette application", expanded=True):
-    st.markdown("""
-    ### Bienvenue dans l'application d'analyse des réservoirs d'eau
-
-    Cette application vous permet de visualiser et d'analyser les données de volume d'eau des réservoirs.
-    Pour commencer :
-
-    1. **Téléchargez votre fichier CSV** contenant les données de chroniques
-    2. **Sélectionnez les colonnes** pour le temps et les données de volume
-    3. Accédez à la page **Chroniques** pour visualiser les graphiques et ajuster les paramètres d'affichage
-
-    Le format attendu du CSV est un fichier avec une colonne de date et une colonne de volume.
-    """)
+# Ajouter le titre de la page automatiquement
+add_page_title()
 
 # -------------------------------------------------
 # Téléchargement de fichier
@@ -126,10 +105,23 @@ if uploaded_file is not None:
     st.session_state['uploaded_data'] = csv_data
     
     # Message de confirmation
-    st.success("✅ Données chargées avec succès ! Vous pouvez maintenant accéder à la page Chroniques pour visualiser vos données.")
+    st.success("✅ Données chargées avec succès ! Vous pouvez maintenant accéder à la page Visualisation pour explorer vos données.")
     
-    # Bouton pour aller à la page Chroniques
-    if st.button("Aller à la page Chroniques"):
+    # Présentation des données chargées
+    st.header("4️⃣ Résumé des données")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.metric("Nombre total d'enregistrements", f"{len(df):,}")
+        st.metric("Période couverte", f"{min_year} - {max_year}")
+    
+    with col2:
+        st.metric("Valeur minimale", f"{df[volume_col].min():,.2f}")
+        st.metric("Valeur maximale", f"{df[volume_col].max():,.2f}")
+    
+    # Bouton pour aller à la page de visualisation
+    st.markdown("### Prêt à visualiser vos données ?")
+    if st.button("Aller à la page de visualisation", type="primary"):
         st.switch_page("pages/2_📊_Chroniques.py")
 
 else:
@@ -137,9 +129,25 @@ else:
     st.info("Veuillez télécharger un fichier CSV pour commencer.")
     
     # Exemple de données
-    st.markdown("### Exemple de format de données attendu:")
-    example_data = pd.DataFrame({
-        'time': ['01/01/2020', '02/01/2020', '03/01/2020', '04/01/2020', '05/01/2020'],
-        'volume': [12500000, 12700000, 12900000, 13100000, 13300000]
-    })
-    st.dataframe(example_data)
+    with st.expander("Exemple de format de données attendu", expanded=False):
+        example_data = pd.DataFrame({
+            'time': ['01/01/2020', '02/01/2020', '03/01/2020', '04/01/2020', '05/01/2020'],
+            'volume': [12500000, 12700000, 12900000, 13100000, 13300000]
+        })
+        st.dataframe(example_data)
+        
+        st.markdown("""
+        **Notes importantes:**
+        - La colonne de temps doit contenir des dates valides
+        - La colonne de volume doit contenir des valeurs numériques
+        - Le séparateur peut être un point-virgule (;) ou une virgule (,)
+        """)
+
+# Masquer le menu et le pied de page Streamlit
+hide_streamlit_style = """
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
