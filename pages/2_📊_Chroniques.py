@@ -115,20 +115,8 @@ with st.sidebar:
         help="Nombre d'années utilisées pour le calcul de la moyenne mobile"
     )
     
-    if st.button("Réinitialiser les paramètres"):
-        st.session_state['params']['visualization'] = {
-            "year_min": year_min,
-            "year_max": year_max,
-            "freq": "D",
-            "log_y": False,
-            "focus_year": year_max - 1,
-            "rolling_window": 5,
-            "start_month": 1
-        }
-        st.rerun()
-    
-    st.session_state['params']['visualization']['year_min'] = year_range[0]
-    st.session_state['params']['visualization']['year_max'] = year_range[1]
+    st.session_state['params']['visualization']['year_min_visualization'] = year_range[0]
+    st.session_state['params']['visualization']['year_min_visualization'] = year_range[1]
     st.session_state['params']['visualization']['freq'] = freq
     st.session_state['params']['visualization']['log_y'] = log_y
     st.session_state['params']['visualization']['focus_year'] = focus_year
@@ -141,9 +129,47 @@ with st.sidebar:
 year_min, year_max = year_range
 
 st.header(f"Visualisation des chroniques pour {volume_col}")
-st.write(f"Données chargées: **{time_col}** (temps) et **{volume_col}** (volume)")
+st.write(f"Données chargées: **{time_col}** (temps) et **{volume_col}** (variable explorée)")
 st.write(f"Période: {year_min} - {year_max}")
 
+with st.expander("📄 Informations techniques"):
+    st.markdown("""
+    ### Gestion des semaines et du cycle annuel personnalisé
+
+    #### Numérotation des semaines
+
+    Les semaines utilisées ne suivent pas le calendrier ISO (lundi au dimanche). Elles sont calculées à partir du jour de l’année (`doy`) :
+
+    ```text
+    week_num = floor((doy - 1) / 7) + 1
+    ```
+
+    Chaque semaine contient 7 jours, et la 52e semaine regroupe tous les jours restants. Les 29 février sont supprimés et le 365e jour est rattaché à la dernière semaine (52), formant ainsi une semaine de 8 jours.
+
+    ---
+
+    #### Début d’année personnalisé (`start_month`)
+
+    Il est possible de définir un mois de début du cycle annuel différent de janvier, par exemple octobre (`start_month = 10`).
+
+    Cela entraîne :
+    - Un recalcul des années : le cycle annuel commence en octobre d'une année N et se termine en septembre de l’année N+1.
+    - Une reclassification des mois et des jours de l’année (le jour 1 correspond au 1er octobre).
+    - Une adaptation des axes temporels dans les visualisations.
+
+    **Exemple :** avec `start_month = 10`, janvier 2017 appartient au cycle de l'année 2017 (qui couvre oct. 2016 à sept. 2017).
+
+    ---
+
+    #### Conséquences sur le traitement
+
+    - Les dates sont converties en `datetime` pour tous les traitements.
+    - Les années incomplètes sont ignorées, ou interpolées si nécessaires.
+    - Le cumul annuel peut être activé (`cumul=True`), basé sur le cycle défini.
+    - Des moyennes par jour, semaine ou mois sont calculées selon `freq`.
+    - Un lissage interannuel est possible via `rolling_window`.
+    - En mode `statistics`, des bandes de quantiles sont générées avec comparaison à une année de référence.
+    """)
 # ---------------------------------------------------
 # Filtrage des données
 # ---------------------------------------------------
