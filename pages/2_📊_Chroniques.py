@@ -2,10 +2,8 @@ import streamlit as st
 import pandas as pd
 import io
 
-# Configuration de la page - DOIT ÊTRE LA PREMIÈRE COMMANDE STREAMLIT
 st.set_page_config(page_title="Visualisation", page_icon="📊", layout="centered")
 
-# Titre de la page
 st.title("📊 Visualisation des chroniques")
 st.markdown("---")
 
@@ -30,12 +28,14 @@ def check_data_availability():
 def load_data():
     """Charge les données depuis la session"""
     csv_data = st.session_state['uploaded_data']
-    data = pd.read_csv(io.StringIO(csv_data.decode('utf-8')))
+    try:
+        data = pd.read_csv(io.StringIO(csv_data.decode('utf-8')))
+    except Exception as e:
+        st.error(f"Erreur lors de la lecture des données: {e}")
     
     params = st.session_state['params']
     time_col = params['data_info']['time_col']
     
-    # Convertir la colonne de temps en datetime
     data[time_col] = pd.to_datetime(data[time_col], errors='coerce')
     
     return data, params
@@ -61,7 +61,6 @@ custom_max_value = params['data_info'].get('custom_max_value')  # Peut être Non
 with st.sidebar:
     st.header("Paramètres de visualisation")
     
-    # Section 1: Paramètres de plage et de fréquence
     st.subheader("Données")
     
     year_range = st.slider(
@@ -71,14 +70,21 @@ with st.sidebar:
         value=(int(year_min), int(year_max))
     )
     
-    freq = st.selectbox(
-        "Fréquence d'échantillonnage",
-        options=["D", "W", "ME"],
+    freq_options = {
+        "Journalier": "D",
+        "Hebdomadaire": "W",
+        "Mensuel (fin)": "ME"
+    }
+    
+    freq_display = st.selectbox(
+        "Fréquence",
+        options=list(freq_options.keys()),
         index=0,
-        help="D: Journalier, W: Hebdomadaire, ME: Fin de mois"
+        help="Journalier, Hebdomadaire, ou Mensuel (fin de mois)"
     )
     
-    # Section 2: Paramètres d'affichage
+    freq = freq_options[freq_display]
+    
     st.subheader("Affichage")
     
     log_y = st.checkbox("Échelle logarithmique (log_y)", value=False)
@@ -91,7 +97,6 @@ with st.sidebar:
         help="Définit le mois de début pour le cycle annuel"
     )
     
-    # Section 3: Paramètres d'analyse
     st.subheader("Analyse")
     
     focus_year = st.slider(
@@ -110,7 +115,6 @@ with st.sidebar:
         help="Nombre d'années utilisées pour le calcul de la moyenne mobile"
     )
     
-    # Bouton pour réinitialiser les paramètres
     if st.button("Réinitialiser les paramètres"):
         st.session_state['params']['visualization'] = {
             "year_min": year_min,
@@ -123,7 +127,6 @@ with st.sidebar:
         }
         st.rerun()
     
-    # Mise à jour des valeurs dans session_state
     st.session_state['params']['visualization']['year_min'] = year_range[0]
     st.session_state['params']['visualization']['year_max'] = year_range[1]
     st.session_state['params']['visualization']['freq'] = freq
@@ -137,7 +140,6 @@ with st.sidebar:
 # ---------------------------------------------------
 year_min, year_max = year_range
 
-# Afficher les informations des données chargées
 st.header(f"Visualisation des chroniques pour {volume_col}")
 st.write(f"Données chargées: **{time_col}** (temps) et **{volume_col}** (volume)")
 st.write(f"Période: {year_min} - {year_max}")
@@ -159,7 +161,6 @@ st.header("Série temporelle chronologique")
 tab1, tab2, tab3 = st.tabs(["Standard", "Moyenne glissante", "Comparaison"])
 
 with tab1:
-    # Création du graphique
     plotter = TimeSeriesPlot_Plotly(
         x_axis_title="Date",
         y_axis_title=f"Volume ({volume_col})",
@@ -169,7 +170,6 @@ with tab1:
         start_month=start_month
     )
 
-    # Ajout des séries
     plotter.add_series(
         df=df_filtered,
         time_col=time_col,
@@ -180,7 +180,6 @@ with tab1:
         year_max=year_max,
     )
     
-    # Ligne de référence
     plotter.add_line(
         orientation='h',
         position=max_volume,
@@ -190,12 +189,10 @@ with tab1:
         label=f'{max_volume_label} {max_volume:,.0f}'
     )
 
-    # Affichage du graphique
     plotter.fig = plotter.create_figure()
     st.plotly_chart(plotter.fig, theme="streamlit", use_container_width=True)
 
 with tab2:
-    # Création du graphique avec moyenne glissante
     plotter = TimeSeriesPlot_Plotly(
         x_axis_title="Date",
         y_axis_title=f"Volume ({volume_col})",
@@ -205,7 +202,6 @@ with tab2:
         start_month=start_month
     )
 
-    # Ajout des séries
     plotter.add_series(
         df=df_filtered,
         time_col=time_col,
@@ -217,7 +213,6 @@ with tab2:
         rolling_window=rolling_window
     )
     
-    # Ligne de référence
     plotter.add_line(
         orientation='h',
         position=max_volume,
@@ -227,12 +222,10 @@ with tab2:
         label=f'{max_volume_label} {max_volume:,.0f}'
     )
 
-    # Affichage du graphique
     plotter.fig = plotter.create_figure()
     st.plotly_chart(plotter.fig, theme="streamlit", use_container_width=True)
 
 with tab3:
-    # Création du graphique de comparaison
     plotter = TimeSeriesPlot_Plotly(
         x_axis_title="Date",
         y_axis_title=f"Volume ({volume_col})",
@@ -243,7 +236,6 @@ with tab3:
         focus_year=focus_year
     )
 
-    # Ajout des séries
     plotter.add_series(
         df=df_filtered,
         time_col=time_col,
@@ -254,7 +246,6 @@ with tab3:
         year_max=year_max
     )
     
-    # Ligne de référence
     plotter.add_line(
         orientation='h',
         position=max_volume,
@@ -264,7 +255,6 @@ with tab3:
         label=f'{max_volume_label} {max_volume:,.0f}'
     )
 
-    # Affichage du graphique
     plotter.fig = plotter.create_figure()
     st.plotly_chart(plotter.fig, theme="streamlit", use_container_width=True)
 
@@ -275,7 +265,6 @@ st.header("Cycle annuel")
 tab1, tab2 = st.tabs(["Standard", "Moyenne glissante"])
 
 with tab1:
-    # Création du graphique
     plotter = TimeSeriesPlot_Plotly(
         x_axis_title="Date",
         y_axis_title=f"Volume ({volume_col})",
@@ -285,7 +274,6 @@ with tab1:
         start_month=start_month
     )
 
-    # Ajout des séries
     plotter.add_series(
         df=df_filtered,
         time_col=time_col,
@@ -296,7 +284,6 @@ with tab1:
         year_max=year_max,
     )
     
-    # Ligne de référence
     plotter.add_line(
         orientation='h',
         position=max_volume,
@@ -306,12 +293,10 @@ with tab1:
         label=f'{max_volume_label} {max_volume:,.0f}'
     )
 
-    # Affichage du graphique
     plotter.fig = plotter.create_figure()
     st.plotly_chart(plotter.fig, theme="streamlit", use_container_width=True)
 
 with tab2:
-    # Création du graphique avec moyenne glissante
     plotter = TimeSeriesPlot_Plotly(
         x_axis_title="Date",
         y_axis_title=f"Volume ({volume_col})",
@@ -321,7 +306,6 @@ with tab2:
         start_month=start_month
     )
 
-    # Ajout des séries
     plotter.add_series(
         df=df_filtered,
         time_col=time_col,
@@ -332,8 +316,7 @@ with tab2:
         year_max=year_max,
         rolling_window=rolling_window
     )
-    
-    # Ligne de référence
+
     plotter.add_line(
         orientation='h',
         position=max_volume,
@@ -343,7 +326,6 @@ with tab2:
         label=f'{max_volume_label} {max_volume:,.0f}'
     )
 
-    # Affichage du graphique
     plotter.fig = plotter.create_figure()
     st.plotly_chart(plotter.fig, theme="streamlit", use_container_width=True)
 
@@ -352,7 +334,6 @@ with tab2:
 # ---------------------------------------------------
 st.header("Analyse statistique")
 
-# Création du graphique statistique
 plotter = TimeSeriesPlot_Plotly(
     x_axis_title="Date",
     y_axis_title=f"Volume ({volume_col})",
@@ -363,7 +344,6 @@ plotter = TimeSeriesPlot_Plotly(
     start_month=start_month
 )
 
-# Ajout des séries
 plotter.add_series(
     df=df_filtered,
     time_col=time_col,
@@ -374,7 +354,6 @@ plotter.add_series(
     year_max=year_max,
 )
 
-# Ligne de référence
 plotter.add_line(
     orientation='h',
     position=max_volume,
@@ -384,7 +363,6 @@ plotter.add_line(
     label=f'{max_volume_label} {max_volume:,.0f}'
 )
 
-# Affichage du graphique
 plotter.fig = plotter.create_figure()
 st.plotly_chart(plotter.fig, theme="streamlit", use_container_width=True)
 
