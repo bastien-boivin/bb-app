@@ -1,17 +1,14 @@
 import streamlit as st
 
-# Configuration de la page
 st.set_page_config(page_title="Reservoir Analysis", page_icon="💧", layout="wide")
 
-# Titre de la page d'accueil
 st.title("📊 Reservoir Water Volume Analysis")
 st.markdown("---")
 
-# Contenu de la page d'accueil
 st.markdown("""
-## 💧 Application d'analyse des réservoirs d'eau
+## 💧 Application d'analyse de chroniques
 
-Cette application vous permet d'analyser et de visualiser les données de volume d'eau des réservoirs.
+Cette application vous permet d'analyser et de visualiser des données temporelles.
 
 ### Fonctionnalités principales :
 - **Chargement des données** : téléchargez vos fichiers CSV contenant les chroniques de données
