@@ -199,6 +199,7 @@ class TimeSeriesPlot_Plotly:
         self.legend_name = legend_name
         self.rolling_window = rolling_window
 
+        df = df.copy()
         df[time_col] = pd.to_datetime(df[time_col])
 
         if self.mode == 'statistics' and self.rolling_window is not None:
@@ -834,7 +835,9 @@ class TimeSeriesPlot_Plotly:
         """
         fig = go.Figure()
 
+        # ---------------------------------------------------------------
         # MODE = historical
+        # ---------------------------------------------------------------
         if self.mode == 'historical':
             # Trace the main time series first
             for series in self.series_list:
@@ -918,8 +921,9 @@ class TimeSeriesPlot_Plotly:
                 hovermode='x unified',
                 hoverdistance=1,
             )
-
+        # ---------------------------------------------------------------
         # MODE = annual_cycle
+        # ---------------------------------------------------------------
         elif self.mode == 'annual_cycle':
             all_x = []
             num_series = len(self.series_list)
@@ -960,7 +964,9 @@ class TimeSeriesPlot_Plotly:
                 ),
             )
         
+        # ---------------------------------------------------------------
         # MODE = statistics
+        # ---------------------------------------------------------------
         elif self.mode == 'statistics':
             if not self.series_list:
                 logging.warning("No series for mode=statistics")
@@ -1103,12 +1109,13 @@ class TimeSeriesPlot_Plotly:
                 orientation='v',
                 yanchor='bottom',
                 y=0,
-                x=1.21,
-                xanchor='right',
+                x=1.05,
+                xanchor='left',
                 bgcolor='rgba(255, 255, 255, 0.5)',
                 bordercolor='black',
                 borderwidth=1
-            )
+            ),
+            margin=dict(r=50)
         )
         
         fig.update_xaxes(
