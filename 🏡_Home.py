@@ -2,9 +2,6 @@ import streamlit as st
 
 st.set_page_config(page_title="Analysis chronicles", page_icon="📈", layout="wide")
 
-st.title("📈 Analysis of chronicles")
-st.markdown("---")
-
 st.markdown("""
 ## 💧 Application d'analyse de chroniques
 
@@ -21,5 +18,4 @@ Cette application vous permet d'analyser et de visualiser des données temporell
 1. Accédez à la page **Chargement des données** dans la barre latérale pour télécharger votre fichier CSV
 2. Ensuite, rendez-vous sur la page **Visualisation** pour explorer vos données
 
-Développé par le Département des Sciences Environnementales, Université de Rennes.
 """)
