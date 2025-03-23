@@ -1,8 +1,8 @@
 import streamlit as st
 
-st.set_page_config(page_title="Reservoir Analysis", page_icon="💧", layout="wide")
+st.set_page_config(page_title="Analysis chronicles", page_icon="📈", layout="wide")
 
-st.title("📊 Reservoir Water Volume Analysis")
+st.title("📈 Analysis of chronicles")
 st.markdown("---")
 
 st.markdown("""
