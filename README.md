@@ -8,15 +8,6 @@ BB App is a Streamlit application designed to visualize and interact with time s
 
 This repository is a copy from a GitLab repository.
 
-## Table of Contents
-
-1. [Introduction](#introduction)
-2. [Installation](#installation)
-3. [Usage](#usage)
-4. [Contributing](#contributing)
-5. [License](#license)
-6. [Contact](#contact)
-
 ## Introduction
 
 BB App provides intuitive visualizations and interactive tools for analyzing hydrological and hydrogeological data. Users can customize various parameters to suit their specific needs, such as selecting the start of the hydrological year and adjusting moving average lengths.
