@@ -6,6 +6,8 @@ BB App is a Streamlit application designed to visualize and interact with time s
 - Define the length of moving averages.
 - Generate statistical graphs based on quantiles with the option to select the observed year.
 
+This repository is a copy from a GitLab repository.
+
 ## Table of Contents
 
 1. [Introduction](#introduction)
