@@ -10,11 +10,12 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
 from os.path import abspath, dirname
+
+# Get root directory but don't change working directory
+# This is important for compatibility with Streamlit Cloud
 root_dir = dirname(dirname(dirname(abspath(__file__))))
-sys.path.append(root_dir)
-cwd = os.getcwd()
-if cwd != root_dir:
-    os.chdir(root_dir)
+if root_dir not in sys.path:
+    sys.path.append(root_dir)
 
 # -----------------------------------------------------
 # Module Imports
